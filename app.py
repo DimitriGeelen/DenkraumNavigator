@@ -266,6 +266,24 @@ def download_backup(filename):
         print(f"Error sending backup file '{backup_path}': {e}")
         abort(500)
 
+@app.route('/download_code_backup/<filename>')
+def download_code_backup(filename):
+    """Serves a requested historical code zip backup file."""
+    # Basic security
+    if '..' in filename or '/' in filename or not filename.endswith('.zip'):
+        abort(400)
+        
+    backup_path = os.path.join(BACKUP_DIR, filename)
+    
+    if not os.path.isfile(backup_path):
+        abort(404)
+        
+    try:
+        return send_file(backup_path, as_attachment=True, mimetype='application/zip')
+    except Exception as e:
+        print(f"Error sending code backup file '{backup_path}': {e}")
+        abort(500)
+
 @app.route('/history')
 def history():
     """Displays the git commit history and available backups."""
@@ -286,18 +304,22 @@ def history():
     except Exception as e:
         history_log = [f"An unexpected error occurred: {e}"]
     
-    # Get available backups
-    backup_files = []
+    # Get available backups (DB and Code)
+    db_backup_files = []
+    code_backup_files = []
     try:
         if os.path.isdir(BACKUP_DIR):
-            # List files, sort by modification time (newest first) might be better?
-            # Or just alphabetical which groups by date in filename
-            backup_files = sorted([f for f in os.listdir(BACKUP_DIR) if f.endswith('.db')], reverse=True)
+            all_files = sorted(os.listdir(BACKUP_DIR), reverse=True)
+            db_backup_files = [f for f in all_files if f.startswith('backup_') and f.endswith('.db')]
+            code_backup_files = [f for f in all_files if f.startswith('code_') and f.endswith('.zip')]
     except Exception as e:
         print(f"Error listing backup directory '{BACKUP_DIR}': {e}")
         # Optionally add an error message to display on the page
         
-    return render_template('history.html', history_log=history_log, backup_files=backup_files)
+    return render_template('history.html', 
+                           history_log=history_log, 
+                           db_backup_files=db_backup_files,
+                           code_backup_files=code_backup_files)
 
 @app.route('/download_code')
 def download_code():

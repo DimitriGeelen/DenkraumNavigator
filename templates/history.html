@@ -63,19 +63,34 @@
         
         <hr style="margin: 30px 0;">
         
-        <h2>Database Backups</h2>
-        {% if backup_files %}
+        <h2>Database Backups (.db)</h2>
+        {% if db_backup_files %}
             <ul>
-            {% for backup_file in backup_files %}
+            {% for backup_file in db_backup_files %}
                 <li>
                     {{ backup_file }}
-                    <small>[<a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}">Download</a>]</small>
-                    <!-- Restore link could be added here later if needed -->
+                    <small>[<a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}">Download DB</a>]</small>
                 </li>
             {% endfor %}
             </ul>
         {% else %}
-            <p>No database backups found in '{{ BACKUP_DIR or "backups" }}' directory.</p>
+            <p>No database backups found.</p>
+        {% endif %}
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Code Backups (.zip)</h2>
+        {% if code_backup_files %}
+            <ul>
+            {% for backup_file in code_backup_files %}
+                <li>
+                    {{ backup_file }}
+                    <small>[<a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}">Download Code</a>]</small>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No code backups found (created during version commits).</p>
         {% endif %}
         
     </div>
