@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Version History - DenkraumNavigator</title>
     <style>
-        /* === Global Styles (Mostly copied from index.html) === */
+        /* === Global Styles === */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height: 1.5;
+            line-height: 1.5; /* Slightly reduced line height */
             margin: 0;
             background-color: #f8f9fa;
             color: #343a40;
-            font-size: 0.95rem;
+            font-size: 0.95rem; /* Slightly smaller base font */
         }
         /* === Navbar Styles === */
         .navbar {
@@ -31,23 +31,21 @@
             margin-left: 15px; /* Space between nav items */
         }
         .navbar a {
-            color: #f8f9fa; /* Light text */
+            color: #114f8d; /* Light text */
             text-decoration: none;
             padding: 8px 15px;
-            border-radius: 4px;
+            border-radius: 0px
             transition: background-color 0.2s ease;
         }
         .navbar a:hover {
             background-color: #495057;
-            color: #fff;
+            color: #f1ebeb;
         }
-        /* Style for button-like links in navbar */
+        /* Style for button-like links in navbar (should not apply to history page navbar links now) */
         .navbar .btn-link {
              background-color: #6c757d;
              border: 1px solid #6c757d;
-             color: #fff;
-             padding: 6px 12px; /* Match btn-link padding */
-             font-size: 0.9em; /* Match btn-link font size */
+             color: #f5eded;
         }
         .navbar .btn-link:hover {
              background-color: #5a6268;
@@ -55,9 +53,9 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1100px; /* Wider container */
             margin: 20px auto;
-            background: #ffffff;
+            background: #f5f1f1;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -87,12 +85,11 @@
             color: #0056b3;
             text-decoration: underline;
         }
-         small {
+        small {
              color: #6c757d;
-             font-size: 0.9em;
-             margin-left: 8px; /* Consistent spacing */
+             font-size: 0.9em; /* Make small text slightly smaller */
         }
-         hr {
+        hr {
              border: none;
              border-top: 1px solid #dee2e6;
              margin: 25px 0;
@@ -100,6 +97,72 @@
         p {
              margin-bottom: 0.8em;
         }
+
+        /* === Link Button Styles === */
+        .btn-link {
+            display: inline-block; /* Needed for padding/margin */
+            padding: 4px 8px; /* Reduced padding */
+            font-size: 0.9em;
+            font-weight: 500; /* Keep slightly bold */
+            color: #faf4f4; /* White text */
+            background-color: #6c757d; /* Default background (grey) */
+            border: 1px solid #6c757d; /* Default border */
+            border-radius: 4px; /* Keep rounded corners */
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            margin: 2px; /* Small margin around buttons */
+        }
+        .btn-link:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: #fff;
+            text-decoration: none; /* No underline on hover */
+        }
+        /* Specific colors for different buttons */
+        .btn-link-download {
+            background-color: #17a2b8; 
+            border-color: #17a2b8;
+        }
+        .btn-link-download:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+        .btn-link-reset {
+            background-color: #28a745; /* Success green color */
+            border-color: #28a745;
+            color: #fff; /* Ensure white text */
+        }
+         .btn-link-reset:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+             color: #fff;
+        }
+        /* Specific colors for history page buttons */
+         .btn-link-download-db {
+            background-color: #17a2b8; /* Info color */
+            border-color: #17a2b8;
+        }
+        .btn-link-download-db:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+        .btn-link-download-code {
+            background-color: #28a745; /* Success color */
+            border-color: #28a745;
+        }
+         .btn-link-download-code:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        .btn-link-nav { 
+            /* Styles specific to buttons below H1 */
+            margin: 0 5px; /* Add space between these buttons */
+        }
+
+        /* History/Backup List Specific Styles */
         ul {
             list-style: none;
             padding: 0;
@@ -117,62 +180,17 @@
             align-items: center;
         }
         li span { /* For the text part */
-            margin-right: 10px; /* Space before buttons */
-            word-break: break-all; /* Break long filenames */
+            margin-right: 10px; 
+            word-break: break-all; 
         }
         li div { /* Container for buttons */
-            white-space: nowrap; /* Prevent buttons wrapping */
+            white-space: nowrap; 
         }
-
-         /* === Link Button Styles === */
-        .btn-link {
-            display: inline-block;
-            padding: 4px 8px; /* Reduced padding */
-            font-size: 0.85em;
-            font-weight: 500;
-            color: #fff;
-            background-color: #6c757d; 
-            border: 1px solid #6c757d; 
-            border-radius: 4px;
-            text-align: center;
-            vertical-align: middle;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-            margin-left: 5px; 
-        }
-        .btn-link:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
-            color: #fff;
-            text-decoration: none;
-        }
-        /* Specific background/border colors */
-        .btn-link-download-db {
-            background-color: #17a2b8; 
-            border-color: #17a2b8;
-            color: #fff; /* Ensure consistent text color */
-        }
-         .btn-link-download-db:hover {
-            background-color: #138496;
-            border-color: #117a8b;
-            color: #fff;
-        }
-        .btn-link-download-code {
-            background-color: #28a745; 
-            border-color: #28a745;
-            color: #fff;
-        }
-         .btn-link-download-code:hover {
-            background-color: #218838;
-            border-color: #1e7e34;
-            color: #fff;
-        }
-        /* Navbar button styling */
-        .btn-link-nav {
-             /* Use base .btn-link styles, potentially override color/bg if needed */
-             /* For now, inherits grey button style */
-        }
+         li .btn-link { /* Adjust button size in lists */
+             padding: 3px 6px;
+             font-size: 0.85em;
+             margin: 0 0 0 5px; /* Only left margin for list buttons */
+         }
     </style>
 </head>
 <body>
@@ -180,7 +198,7 @@
         <ul>
             <li><a href="/">Search</a></li>
             <li><a href="/browse/">Browse Archive</a></li>
-            <!-- Download links remain outside navbar -->
+
         </ul>
     </nav>
 
