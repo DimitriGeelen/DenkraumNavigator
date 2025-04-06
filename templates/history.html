@@ -48,6 +48,8 @@
     <div class="container">
         <h1>Version History (Git Log)</h1>
         <p><a href="/">&larr; Back to Search</a></p>
+        <p><a href="{{ url_for('download_code') }}">Download Current Code (.zip)</a></p>
+        <p><a href="{{ url_for('download_package') }}">Download Current Package (Code + Current DB) (.zip)</a></p>
         
         {% if history_log %}
             <ul>
@@ -58,6 +60,24 @@
         {% else %}
             <p>Could not retrieve version history.</p>
         {% endif %}
+        
+        <hr style="margin: 30px 0;">
+        
+        <h2>Database Backups</h2>
+        {% if backup_files %}
+            <ul>
+            {% for backup_file in backup_files %}
+                <li>
+                    {{ backup_file }}
+                    <small>[<a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}">Download</a>]</small>
+                    <!-- Restore link could be added here later if needed -->
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No database backups found in '{{ BACKUP_DIR or "backups" }}' directory.</p>
+        {% endif %}
+        
     </div>
 </body>
 </html> 

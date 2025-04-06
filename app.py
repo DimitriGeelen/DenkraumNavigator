@@ -1,6 +1,9 @@
 import sqlite3
 import os
 import subprocess # For running git log
+import zipfile
+import io
+import datetime # For timestamp in zip filename
 from flask import Flask, render_template, request, g, send_file, abort
 from collections import Counter
 import math # For tag cloud scaling
@@ -9,6 +12,7 @@ DATABASE = 'file_index.db'
 # IMPORTANT: Define the root directory that contains the indexed files for security
 # This should be the directory you passed to indexer.py (e.g., /dol-data-archive2)
 INDEXED_ROOT_DIR = "/dol-data-archive2"
+BACKUP_DIR = "backups"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
@@ -244,9 +248,28 @@ def download_file(file_path=None):
         print(f"Error sending file '{safe_path}': {e}")
         abort(500) # Internal Server Error
 
+@app.route('/download_backup/<filename>')
+def download_backup(filename):
+    """Serves a requested database backup file."""
+    # Basic security: ensure filename doesn't contain path traversal
+    if '..' in filename or '/' in filename:
+        abort(400) # Bad request
+        
+    backup_path = os.path.join(BACKUP_DIR, filename)
+    
+    if not os.path.isfile(backup_path):
+        abort(404) # Not Found
+        
+    try:
+        return send_file(backup_path, as_attachment=True)
+    except Exception as e:
+        print(f"Error sending backup file '{backup_path}': {e}")
+        abort(500)
+
 @app.route('/history')
 def history():
-    """Displays the git commit history."""
+    """Displays the git commit history and available backups."""
+    # Get Git history
     try:
         # Run git log, get limited output, decode to string
         # Use a format that's easy to parse/display
@@ -262,8 +285,112 @@ def history():
         history_log = [f"Error running git log: {e.stderr}"]
     except Exception as e:
         history_log = [f"An unexpected error occurred: {e}"]
+    
+    # Get available backups
+    backup_files = []
+    try:
+        if os.path.isdir(BACKUP_DIR):
+            # List files, sort by modification time (newest first) might be better?
+            # Or just alphabetical which groups by date in filename
+            backup_files = sorted([f for f in os.listdir(BACKUP_DIR) if f.endswith('.db')], reverse=True)
+    except Exception as e:
+        print(f"Error listing backup directory '{BACKUP_DIR}': {e}")
+        # Optionally add an error message to display on the page
         
-    return render_template('history.html', history_log=history_log)
+    return render_template('history.html', history_log=history_log, backup_files=backup_files)
+
+@app.route('/download_code')
+def download_code():
+    """Creates a zip archive of the source code and sends it."""
+    # Define which files/dirs to include
+    # Exclude backups, venv, db, logs etc. (already in .gitignore, but good practice here too)
+    project_files = [
+        'app.py',
+        'indexer.py',
+        'searcher.py', # Include the CLI searcher too
+        'requirements.txt',
+        'VERSION',
+        '.gitignore',
+        'templates/index.html',
+        'templates/history.html'
+    ]
+    
+    memory_file = io.BytesIO()
+    try:
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for f in project_files:
+                if os.path.exists(f):
+                    zf.write(f, arcname=f) # Add file with its path
+                else:
+                    print(f"Warning: File not found for zipping: {f}") # Log missing files
+            
+            # Add templates directory content (if not empty and exists)
+            if os.path.isdir('templates'):
+                 for root, _, files in os.walk('templates'):
+                    for file in files:
+                         file_path = os.path.join(root, file)
+                         arcname = os.path.relpath(file_path, start='.') # Use relative path in zip
+                         zf.write(file_path, arcname=arcname)
+                         
+        memory_file.seek(0)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"dol_data_archiver_code_{timestamp}.zip"
+        
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=zip_filename
+        )
+    except Exception as e:
+        print(f"Error creating code zip file: {e}")
+        abort(500)
+
+@app.route('/download_package')
+def download_package():
+    """Creates a zip archive of the source code and current database."""
+    # Define files to include (same as download_code plus database)
+    project_files = [
+        'app.py',
+        'indexer.py',
+        'searcher.py',
+        'requirements.txt',
+        'VERSION',
+        '.gitignore',
+        DATABASE # Add the database file name
+    ]
+    
+    memory_file = io.BytesIO()
+    try:
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # Add individual files
+            for f in project_files:
+                if os.path.exists(f):
+                    zf.write(f, arcname=f)
+                else:
+                    print(f"Warning: File not found for zipping: {f}")
+            
+            # Add templates directory
+            if os.path.isdir('templates'):
+                 for root, _, files in os.walk('templates'):
+                    for file in files:
+                         file_path = os.path.join(root, file)
+                         arcname = os.path.relpath(file_path, start='.') 
+                         zf.write(file_path, arcname=arcname)
+                         
+        memory_file.seek(0)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"dol_data_archiver_package_{timestamp}.zip"
+        
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=zip_filename
+        )
+    except Exception as e:
+        print(f"Error creating package zip file: {e}")
+        abort(500)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")
