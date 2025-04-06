@@ -9,8 +9,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
     *   Store backups in the `/backups` directory (already added to `.gitignore`).
     *   List commit-based backups (`db_commit_*`, `code_commit_*`) on the `/history` page.
     *   Provide download links for listed backups.
-    *   **(Partially Implemented)** Code changes in `app.py` and `history.html` are done.
-    *   **(Pending User Action)** User needs to install the `post-commit` hook script in `.git/hooks/` and test.
+    *   **(Implemented & Tested)** `post-commit` hook is functional.
 
 2.  **Manual Database Backup Functionality:**
     *   Keep the existing button/route (`/backup`) to trigger manual DB backup creation (`file_index_<timestamp>.db`).
@@ -35,4 +34,5 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
 *   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions).
 
-# Test change for commit hook 
+# Test change for commit hook
+# Test change for tagged commit 
