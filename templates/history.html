@@ -302,6 +302,45 @@
              <p>No commit-based code backups found (starting with 'code_commit_'). Run `git commit` to create one.</p>
         {% endif %}
 
+        <hr style="margin: 30px 0;">
+
+        <h2>Tagged Version Database Backups (.db)</h2>
+        <p>These backups correspond to specific Git tags (e.g., v1.0.0).</p>
+        {% if tagged_db_backups %}
+            <ul>
+            {% for backup_file in tagged_db_backups %}
+                <li>
+                    <span>{{ backup_file }}</span>
+                    <div>
+                        <a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-db">Download DB</a>
+                        {# Restore button placeholder #}
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No tag-based database backups found (starting with 'db_tag_'). Create a Git tag on a commit to generate one.</p>
+        {% endif %}
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Tagged Version Code Backups (.zip)</h2>
+        <p>These backups (.zip archives) correspond to specific Git tags (e.g., v1.0.0).</p>
+        {% if tagged_code_backups %}
+            <ul>
+            {% for backup_file in tagged_code_backups %}
+                <li>
+                    <span>{{ backup_file }}</span>
+                    <div>
+                         <a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-code">Download Code</a>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+             <p>No tag-based code backups found (starting with 'code_tag_'). Create a Git tag on a commit to generate one.</p>
+        {% endif %}
+
     </div>
 </body>
 </html> 

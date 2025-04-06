@@ -354,11 +354,15 @@ def history():
     manual_db_backups = []
     commit_db_backups = []
     commit_code_backups = []
+    tagged_db_backups = []
+    tagged_code_backups = []
     try:
         all_files = sorted(os.listdir(BACKUP_DIR), reverse=True) # Sort by name (descending)
         manual_db_backups = [f for f in all_files if f.startswith('file_index_') and f.endswith('.db')]
         commit_db_backups = [f for f in all_files if f.startswith('db_commit_') and f.endswith('.db')]
         commit_code_backups = [f for f in all_files if f.startswith('code_commit_') and f.endswith('.zip')]
+        tagged_db_backups = [f for f in all_files if f.startswith('db_tag_') and f.endswith('.db')]
+        tagged_code_backups = [f for f in all_files if f.startswith('code_tag_') and f.endswith('.zip')]
     except FileNotFoundError:
         logger.warning(f"Backup directory '{BACKUP_DIR}' not found.")
     except Exception as e:
@@ -368,7 +372,9 @@ def history():
                            history_log=history_log, 
                            manual_db_backups=manual_db_backups,
                            commit_db_backups=commit_db_backups,
-                           commit_code_backups=commit_code_backups)
+                           commit_code_backups=commit_code_backups,
+                           tagged_db_backups=tagged_db_backups,
+                           tagged_code_backups=tagged_code_backups)
 
 @app.route('/browse/')
 @app.route('/browse/<path:sub_path>')
