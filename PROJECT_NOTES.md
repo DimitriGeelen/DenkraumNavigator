@@ -33,4 +33,6 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 ## Open Questions / Ideas
 
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
-*   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions). 
+*   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions).
+
+# Test change for commit hook 
