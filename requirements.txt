@@ -1,0 +1,9 @@
+tqdm
+python-docx
+openpyxl
+python-pptx
+Pillow
+PyMuPDF # For reading PDFs, often more robust than PyPDF2
+nltk
+sumy
+pytesseract 

@@ -1,0 +1,18 @@
+# Python virtual environment
+.venv/
+
+# SQLite database
+*.db
+*.db-journal
+
+# Log files
+*.log
+
+# NLTK Data (if downloaded locally)
+nltk_data/
+
+# IDE / Editor specific
+.idea/
+.vscode/
+*.pyc
+__pycache__/ 
