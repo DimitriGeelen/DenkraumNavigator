@@ -23,4 +23,4 @@ instance/
 .flask_cache/
 
 # Database Backups
-backups/ 
+backups/ /backups/

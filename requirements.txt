@@ -7,4 +7,8 @@ PyMuPDF # For reading PDFs, often more robust than PyPDF2
 nltk
 sumy
 pytesseract
-Flask 
+Flask
+
+# Development/Linting Tools
+flake8
+ruff 

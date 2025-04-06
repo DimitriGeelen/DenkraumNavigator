@@ -162,31 +162,38 @@ def get_file_type(extension):
 # Each function now returns text or None, logging errors internally
 
 def extract_text_docx(file_path):
-    if not docx: return None
+    if not docx:
+        return None
     try:
         doc = docx.Document(file_path)
-        return "\n".join([para.text for para in doc.paragraphs if para.text])
+        return '\n'.join([para.text for para in doc.paragraphs])
     except Exception as e:
-        logging.warning(f"Failed to extract text from DOCX '{file_path}': {e}")
+        logging.error(f"Error reading DOCX {file_path}: {e}")
         return None
 
 def extract_text_xlsx(file_path):
-    if not openpyxl: return None
+    if not openpyxl:
+        return None
     text_content = []
     try:
-        workbook = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
-        for sheet in workbook:
+        workbook = openpyxl.load_workbook(file_path, data_only=True)
+        for sheet_name in workbook.sheetnames:
+            sheet = workbook[sheet_name]
             for row in sheet.iter_rows():
-                row_text = [str(cell.value) for cell in row if cell.value is not None]
+                row_text = []
+                for cell in row:
+                    if cell.value is not None:
+                        row_text.append(str(cell.value))
                 if row_text:
-                    text_content.append(" ".join(row_text))
-        return "\n".join(text_content) if text_content else None
+                    text_content.append(' '.join(row_text))
+        return '\n'.join(text_content)
     except Exception as e:
-        logging.warning(f"Failed to extract text from XLSX '{file_path}': {e}")
+        logging.error(f"Error reading XLSX {file_path}: {e}")
         return None
 
 def extract_text_pptx(file_path):
-    if not Presentation: return None
+    if not Presentation:
+        return None
     text_content = []
     try:
         prs = Presentation(file_path)
@@ -194,40 +201,35 @@ def extract_text_pptx(file_path):
             for shape in slide.shapes:
                 if hasattr(shape, "text"):
                     text_content.append(shape.text)
-        return "\n".join(text_content) if text_content else None
+        return '\n'.join(text_content)
     except Exception as e:
-        logging.warning(f"Failed to extract text from PPTX '{file_path}': {e}")
+        logging.error(f"Error reading PPTX {file_path}: {e}")
         return None
 
 def extract_text_pdf(file_path):
-    if not fitz: return None
+    if not fitz:
+        return None
     text_content = []
     try:
         doc = fitz.open(file_path)
-        for page in doc:
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
             text_content.append(page.get_text())
-        doc.close()
-        return "\n".join(text_content) if text_content else None
+        return '\n'.join(text_content)
     except Exception as e:
-        logging.warning(f"Failed to extract text from PDF '{file_path}': {e}")
+        logging.error(f"Error reading PDF {file_path}: {e}")
         return None
 
 def extract_text_image(file_path):
-    if not Image or not pytesseract: return None
+    if not Image or not pytesseract:
+        return None
     try:
         # Check if tesseract executable is set, otherwise it checks PATH
-        # You might need to set this explicitly:
-        # pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract' # Example for Linux
-        return pytesseract.image_to_string(Image.open(file_path), timeout=30) # Add timeout
-    except (pytesseract.TesseractNotFoundError, FileNotFoundError):
-        logging.error("Tesseract OCR engine not found or not in PATH. Cannot process images.")
-        # Disable further attempts after first error? Maybe add a flag.
-        return None
-    except UnidentifiedImageError:
-        logging.warning(f"Cannot identify image file: '{file_path}'")
-        return None
+        # You might need to set this path explicitly depending on your installation
+        # Example: pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+        return pytesseract.image_to_string(Image.open(file_path))
     except Exception as e:
-        logging.warning(f"Failed OCR on image '{file_path}': {e}")
+        logging.error(f"Error reading Image {file_path} with OCR: {e}")
         return None
 
 def extract_text_plain(file_path):
@@ -483,7 +485,7 @@ def index_files(directory_path, db_conn, db_cursor):
 
     end_time = time.time()
     duration = end_time - start_time
-    print(f"\n--- Indexing Summary ---")
+    print("\n--- Indexing Summary ---")
     print(f"Total files scanned: {total_files + skipped_count}")
     print(f"Successfully processed: {processed_count}")
     print(f"Failed to process: {failed_count}")

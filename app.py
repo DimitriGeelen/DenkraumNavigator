@@ -4,9 +4,11 @@ import subprocess # For running git log
 import zipfile
 import io
 import datetime # For timestamp in zip filename
-from flask import Flask, render_template, request, g, send_file, abort
+import shutil # Import shutil for file copying
+from flask import Flask, render_template, request, g, send_file, abort, flash, redirect, url_for # Add flash, redirect, url_for
 from collections import Counter
 import math # For tag cloud scaling
+import logging
 
 DATABASE = 'file_index.db'
 # IMPORTANT: Define the root directory that contains the indexed files for security
@@ -16,6 +18,9 @@ BACKUP_DIR = "backups"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
+
+# Ensure backup directory exists
+os.makedirs(BACKUP_DIR, exist_ok=True)
 
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
@@ -135,23 +140,19 @@ def get_top_keywords(limit=50):
     
     # Add scaling factor for font size (optional, adjust as needed)
     if top_keywords:
-        max_count = top_keywords[0][1]
-        min_count = top_keywords[-1][1]
+        # max_count = top_keywords[0][1]  # Removed F841
+        # min_count = top_keywords[-1][1]  # Removed F841
         # Apply log scaling to prevent huge differences, avoid log(0 or 1)
-        scaled_keywords = [
-            (kw, count, 1 + math.log(max(1, count))) 
-            for kw, count in top_keywords
-        ]
-        # Normalize the log scale for font size (e.g., 1 to 5)
-        max_log_count = max(s[2] for s in scaled_keywords)
-        min_log_count = min(s[2] for s in scaled_keywords)
-        range_log = max_log_count - min_log_count
+        log_min = 1 # To avoid log(0)
+        log_max = math.log(top_keywords[0][1] + log_min) if top_keywords else 1 # Avoid error on empty
+        log_range = log_max - math.log(top_keywords[-1][1] + log_min) if len(top_keywords) > 1 and top_keywords[-1][1] > 0 else 1 # Avoid div by zero or log(0)
+        log_range = max(log_range, 1) # Ensure range is at least 1
         
         final_keywords = []
-        for kw, count, log_count in scaled_keywords:
-            if range_log > 0:
+        for kw, count in top_keywords:
+            if log_range > 0:
                 # Scale font size from, say, 1 (min) to 4 (max) relative units
-                font_scale = 1 + 3 * (log_count - min_log_count) / range_log 
+                font_scale = 1 + 3 * (math.log(count + log_min) - log_min) / log_range 
             else:
                 font_scale = 2 # Default size if all counts are the same
             final_keywords.append({'text': kw, 'weight': count, 'font_scale': font_scale})
@@ -160,6 +161,35 @@ def get_top_keywords(limit=50):
     else:
         print("DEBUG [get_top_keywords]: No top keywords found after counting.") # Debug
         return []
+
+def create_backup():
+    """Creates a timestamped backup of the database file."""
+    if not os.path.exists(DATABASE):
+        logger.error("Database file not found, cannot create backup.")
+        return None
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"file_index_{timestamp}.db"
+    backup_path = os.path.join(BACKUP_DIR, backup_filename)
+
+    try:
+        shutil.copy2(DATABASE, backup_path) # copy2 preserves metadata
+        logger.info(f"Database backup created: {backup_path}")
+        return backup_path
+    except Exception as e:
+        logger.error(f"Failed to create database backup: {e}")
+        return None
+
+@app.route('/backup', methods=['POST'])
+def backup_now():
+    """Route to trigger a manual database backup."""
+    backup_file = create_backup()
+    if backup_file:
+        flash(f"Backup created successfully: {os.path.basename(backup_file)}", 'success')
+    else:
+        flash("Failed to create backup.", 'error')
+    # Redirect back to the history page (or wherever appropriate)
+    return redirect(url_for('history'))
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -252,44 +282,57 @@ def download_file(file_path=None):
 def download_backup(filename):
     """Serves a requested database backup file."""
     # Basic security: ensure filename doesn't contain path traversal
-    if '..' in filename or '/' in filename:
+    if '..' in filename or filename.startswith('/'):
         abort(400) # Bad request
-        
-    backup_path = os.path.join(BACKUP_DIR, filename)
-    
-    if not os.path.isfile(backup_path):
+
+    backup_file_path = os.path.join(BACKUP_DIR, filename)
+
+    # --- Security Check ---
+    # Ensure the file is within the designated BACKUP_DIR
+    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(BACKUP_DIR)):
+         print(f"Attempt to access backup file outside allowed directory: {backup_file_path}")
+         abort(403) # Forbidden
+
+    if not os.path.isfile(backup_file_path):
         abort(404) # Not Found
-        
+
     try:
-        return send_file(backup_path, as_attachment=True)
+        return send_file(backup_file_path, as_attachment=True)
     except Exception as e:
-        print(f"Error sending backup file '{backup_path}': {e}")
+        print(f"Error sending backup file '{backup_file_path}': {e}")
         abort(500)
 
 @app.route('/download_code_backup/<filename>')
 def download_code_backup(filename):
-    """Serves a requested historical code zip backup file."""
-    # Basic security
-    if '..' in filename or '/' in filename or not filename.endswith('.zip'):
-        abort(400)
-        
-    backup_path = os.path.join(BACKUP_DIR, filename)
-    
-    if not os.path.isfile(backup_path):
-        abort(404)
-        
+    """Serves a requested commit-specific code backup (.zip) file."""
+    # Basic security: ensure filename doesn't contain path traversal
+    if '..' in filename or filename.startswith('/') or not filename.endswith('.zip'):
+        abort(400) # Bad request
+
+    backup_file_path = os.path.join(BACKUP_DIR, filename)
+
+    # --- Security Check ---
+    # Ensure the file is within the designated BACKUP_DIR
+    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(BACKUP_DIR)):
+         logger.warning(f"Attempt to access code backup file outside allowed directory: {backup_file_path}")
+         abort(403) # Forbidden
+
+    if not os.path.isfile(backup_file_path):
+        logger.warning(f"Requested code backup file not found: {backup_file_path}")
+        abort(404) # Not Found
+
     try:
-        return send_file(backup_path, as_attachment=True, mimetype='application/zip')
+        return send_file(backup_file_path, as_attachment=True)
     except Exception as e:
-        print(f"Error sending code backup file '{backup_path}': {e}")
+        logger.error(f"Error sending code backup file '{backup_file_path}': {e}")
         abort(500)
 
 @app.route('/history')
 def history():
-    """Displays the git commit history and available backups."""
-    # Get Git history
+    """Displays git commit history and lists available backups."""
+    # Get Git log
+    history_log = []
     try:
-        # Run git log, get limited output, decode to string
         # Use a format that's easy to parse/display
         log_format = "%h -- %ad -- %s" # hash -- date -- subject
         date_format = "%Y-%m-%d %H:%M" # Short date format
@@ -299,27 +342,33 @@ def history():
         history_log = result.stdout.strip().split('\n')
     except FileNotFoundError:
         history_log = ["Error: 'git' command not found. Is Git installed and in PATH?"]
+        logger.error("'git' command not found when trying to get commit history.")
     except subprocess.CalledProcessError as e:
         history_log = [f"Error running git log: {e.stderr}"]
+        logger.error(f"Error running git log: {e.stderr}")
     except Exception as e:
-        history_log = [f"An unexpected error occurred: {e}"]
-    
-    # Get available backups (DB and Code)
-    db_backup_files = []
-    code_backup_files = []
+        history_log = [f"An unexpected error occurred retrieving git log: {e}"]
+        logger.error(f"An unexpected error occurred retrieving git log: {e}")
+
+    # Get Backups
+    manual_db_backups = []
+    commit_db_backups = []
+    commit_code_backups = []
     try:
-        if os.path.isdir(BACKUP_DIR):
-            all_files = sorted(os.listdir(BACKUP_DIR), reverse=True)
-            db_backup_files = [f for f in all_files if f.startswith('backup_') and f.endswith('.db')]
-            code_backup_files = [f for f in all_files if f.startswith('code_') and f.endswith('.zip')]
+        all_files = sorted(os.listdir(BACKUP_DIR), reverse=True) # Sort by name (descending)
+        manual_db_backups = [f for f in all_files if f.startswith('file_index_') and f.endswith('.db')]
+        commit_db_backups = [f for f in all_files if f.startswith('db_commit_') and f.endswith('.db')]
+        commit_code_backups = [f for f in all_files if f.startswith('code_commit_') and f.endswith('.zip')]
+    except FileNotFoundError:
+        logger.warning(f"Backup directory '{BACKUP_DIR}' not found.")
     except Exception as e:
-        print(f"Error listing backup directory '{BACKUP_DIR}': {e}")
-        # Optionally add an error message to display on the page
-        
+        logger.error(f"Error listing backup directory '{BACKUP_DIR}': {e}")
+
     return render_template('history.html', 
                            history_log=history_log, 
-                           db_backup_files=db_backup_files,
-                           code_backup_files=code_backup_files)
+                           manual_db_backups=manual_db_backups,
+                           commit_db_backups=commit_db_backups,
+                           commit_code_backups=commit_code_backups)
 
 @app.route('/browse/')
 @app.route('/browse/<path:sub_path>')
@@ -480,6 +529,10 @@ def download_package():
     except Exception as e:
         print(f"Error creating package zip file: {e}")
         abort(500)
+
+# Add logger setup if not already present
+logging.basicConfig(level=logging.DEBUG) # Use DEBUG for development
+logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")

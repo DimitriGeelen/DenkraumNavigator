@@ -34,7 +34,7 @@
             color: #114f8d; /* Light text */
             text-decoration: none;
             padding: 8px 15px;
-            border-radius: 0px
+            border-radius: 0px;
             transition: background-color 0.2s ease;
         }
         .navbar a:hover {
@@ -224,40 +224,84 @@
         
         <hr style="margin: 30px 0;">
         
-        <h2>Database Backups (.db)</h2>
-        {% if db_backup_files %}
+        <h2>Manual Database Backups (.db)</h2>
+        {# Button to trigger manual backup #}
+        <form action="{{ url_for('backup_now') }}" method="post" style="text-align: center; margin-bottom: 20px;">
+            <button type="submit" class="btn-link btn-link-reset">Create New Manual Database Backup Now</button>
+        </form>
+        
+        {# Display flash messages for manual backup #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div style="margin-bottom: 15px;">
+                {% for category, message in messages %}
+                    {% if 'Backup created successfully' in message or 'Failed to create backup' in message %}
+                    <div class="alert alert-{{ category }}" style="padding: 10px; border-radius: 4px; background-color: {{ '#d4edda' if category == 'success' else '#f8d7da' }}; border: 1px solid {{ '#c3e6cb' if category == 'success' else '#f5c6cb' }}; color: {{ '#155724' if category == 'success' else '#721c24' }};">
+                        {{ message }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if manual_db_backups %}
             <ul>
-            {% for backup_file in db_backup_files %}
+            {% for backup_file in manual_db_backups %}
                 <li>
                     <span>{{ backup_file }}</span>
                     <div>
                         <a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-db">Download DB</a>
+                        {# Restore button placeholder #}
+                        {# <form ... > ... </form> #}
                     </div>
                 </li>
             {% endfor %}
             </ul>
         {% else %}
-            <p>No database backups found.</p>
+            <p>No manual database backups found (starting with 'file_index_').</p>
         {% endif %}
 
         <hr style="margin: 30px 0;">
 
-        <h2>Code Backups (.zip)</h2>
-        {% if code_backup_files %}
+        <h2>Commit Database Backups (.db)</h2>
+        <p>These backups are created automatically after each Git commit.</p>
+        {% if commit_db_backups %}
             <ul>
-            {% for backup_file in code_backup_files %}
+            {% for backup_file in commit_db_backups %}
                 <li>
                     <span>{{ backup_file }}</span>
                     <div>
-                        <a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-code">Download Code</a>
+                        <a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-db">Download DB</a>
+                        {# Restore button placeholder #}
+                        {# <form ... > ... </form> #}
                     </div>
                 </li>
             {% endfor %}
             </ul>
         {% else %}
-            <p>No code backups found (created during version commits).</p>
+            <p>No commit-based database backups found (starting with 'db_commit_'). Run `git commit` to create one.</p>
         {% endif %}
-        
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Commit Code Backups (.zip)</h2>
+        <p>These backups (.zip archives of the code) are created automatically after each Git commit.</p>
+        {% if commit_code_backups %}
+            <ul>
+            {% for backup_file in commit_code_backups %}
+                <li>
+                    <span>{{ backup_file }}</span>
+                    <div>
+                         <a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-code">Download Code</a>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+             <p>No commit-based code backups found (starting with 'code_commit_'). Run `git commit` to create one.</p>
+        {% endif %}
+
     </div>
 </body>
 </html> 
