@@ -49,6 +49,13 @@ except ImportError:
     print("Error: NLTK not found. Install it (`pip install nltk`) for summarization/keywords.", file=sys.stderr)
     sys.exit(1)
 try:
+    # --- Explicitly add VENV path to NLTK data path ---
+    venv_nltk_path = os.path.join(os.path.dirname(__file__), '.venv', 'nltk_data')
+    if os.path.isdir(venv_nltk_path):
+        if venv_nltk_path not in nltk.data.path:
+            nltk.data.path.append(venv_nltk_path)
+            print(f"Added VENV NLTK path: {venv_nltk_path}")
+    
     from sumy.parsers.plaintext import PlaintextParser
     from sumy.nlp.tokenizers import Tokenizer as SumyTokenizer
     from sumy.summarizers.lsa import LsaSummarizer
@@ -90,7 +97,7 @@ def check_nltk_data():
 def setup_database(db_name=DATABASE_NAME):
     """Creates the SQLite database and the main table if they don't exist."""
     try:
-        conn = sqlite3.connect(db_name, timeout=10) # Increased timeout
+        conn = sqlite3.connect(db_name, timeout=30)
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS files (
@@ -270,12 +277,23 @@ def extract_keywords(text, max_keywords=MAX_KEYWORDS):
         # Improved filtering: longer than 2 chars, alpha, not stopword
         filtered_words = [word for word in words if len(word) > 2 and word.isalpha() and word not in stop_words_set]
         if not filtered_words:
+            # logging.debug("No filtered words for keyword extraction.") # Optional debug
             return ""
         fdist = FreqDist(filtered_words)
         keywords = [word for word, freq in fdist.most_common(max_keywords)]
+        # logging.debug(f"Extracted keywords: {keywords}") # Optional debug
         return ",".join(keywords)
+    except LookupError as e:
+        # This specific error happens if NLTK data (like 'punkt') isn't found
+        log_msg = f"Keyword extraction failed due to missing NLTK data: {e}. Searched paths: {nltk.data.path}"
+        print(f"\nERROR: {log_msg}", file=sys.stderr)
+        logging.error(log_msg)
+        # Ensure the check_nltk_data function ran or try downloading again.
+        return "NLTK_DATA_ERROR"
     except Exception as e:
-        logging.warning(f"Keyword extraction failed: {e}")
+        log_msg = f"Keyword extraction failed: {e} (Type: {type(e).__name__})"
+        # print(f"\nWarning: {log_msg}", file=sys.stderr) # Reduce console noise
+        logging.warning(log_msg, exc_info=True) # Log with traceback
         return ""
 
 
@@ -410,8 +428,9 @@ def index_files(directory_path, db_conn, db_cursor):
                     extracted_text = extract_text_pptx(file_path)
                 elif file_type == 'PDF Document':
                     extracted_text = extract_text_pdf(file_path)
-                elif file_type == 'Image':
-                    extracted_text = extract_text_image(file_path) # OCR
+                # --- Temporarily disable OCR to save memory ---
+                # elif file_type == 'Image':
+                #     extracted_text = extract_text_image(file_path) # OCR
                 elif file_type == 'Text':
                     extracted_text = extract_text_plain(file_path)
                 # Add more handlers here (e.g., 'Code', 'Archive' - maybe list contents?)
