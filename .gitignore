@@ -15,4 +15,12 @@ nltk_data/
 .idea/
 .vscode/
 *.pyc
-__pycache__/ 
+__pycache__/
+
+# Flask cache
+instance/
+.webassets-cache/
+.flask_cache/
+
+# Database Backups
+backups/ 
