@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Version History</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #e9e9e9;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-family: monospace; /* Good for fixed-width hash/dates */
+            font-size: 0.9em;
+        }
+        a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Version History (Git Log)</h1>
+        <p><a href="/">&larr; Back to Search</a></p>
+        
+        {% if history_log %}
+            <ul>
+            {% for log_entry in history_log %}
+                <li>{{ log_entry }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Could not retrieve version history.</p>
+        {% endif %}
+    </div>
+</body>
+</html> 

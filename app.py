@@ -1,10 +1,14 @@
 import sqlite3
 import os
-from flask import Flask, render_template, request, g
+import subprocess # For running git log
+from flask import Flask, render_template, request, g, send_file, abort
 from collections import Counter
 import math # For tag cloud scaling
 
 DATABASE = 'file_index.db'
+# IMPORTANT: Define the root directory that contains the indexed files for security
+# This should be the directory you passed to indexer.py (e.g., /dol-data-archive2)
+INDEXED_ROOT_DIR = "/dol-data-archive2"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
@@ -206,6 +210,60 @@ def index():
                            top_keywords=top_keywords,
                            distinct_types=distinct_types,
                            distinct_years=distinct_years)
+
+@app.route('/download/') # Note the trailing slash
+@app.route('/download/<path:file_path>')
+def download_file(file_path=None):
+    """Serves a requested file for download after security checks."""
+    if not file_path:
+        abort(404) # No file path provided
+
+    # --- Security Check --- 
+    # 1. Normalize the path to prevent directory traversal ('../')
+    # os.path.abspath ensures it starts from root, preventing relative paths outside the intended dir
+    # We prepend / to file_path because the indexed paths are absolute
+    safe_path = os.path.abspath(os.path.join("/", file_path)) # Treat incoming path as relative to root
+    
+    # 2. Ensure the requested path is within the allowed INDEXED_ROOT_DIR
+    # os.path.commonpath requires Python 3.5+ 
+    # For broader compatibility, we check if safe_path starts with the root dir
+    if not safe_path.startswith(os.path.abspath(INDEXED_ROOT_DIR) + os.sep):
+        print(f"Attempt to access file outside allowed directory: {safe_path}")
+        abort(403) # Forbidden
+
+    # 3. Check if the file actually exists
+    if not os.path.isfile(safe_path):
+        print(f"Requested file not found: {safe_path}")
+        abort(404) # Not Found
+
+    try:
+        # Use send_file to handle MIME types and download prompts
+        # as_attachment=True forces the browser download dialog
+        return send_file(safe_path, as_attachment=True)
+    except Exception as e:
+        print(f"Error sending file '{safe_path}': {e}")
+        abort(500) # Internal Server Error
+
+@app.route('/history')
+def history():
+    """Displays the git commit history."""
+    try:
+        # Run git log, get limited output, decode to string
+        # Use a format that's easy to parse/display
+        log_format = "%h -- %ad -- %s" # hash -- date -- subject
+        date_format = "%Y-%m-%d %H:%M" # Short date format
+        git_log_cmd = ["git", "log", "--pretty=format:" + log_format, "--date=format:" + date_format, "-n", "30"] # Show last 30 commits
+        
+        result = subprocess.run(git_log_cmd, capture_output=True, text=True, check=True)
+        history_log = result.stdout.strip().split('\n')
+    except FileNotFoundError:
+        history_log = ["Error: 'git' command not found. Is Git installed and in PATH?"]
+    except subprocess.CalledProcessError as e:
+        history_log = [f"Error running git log: {e.stderr}"]
+    except Exception as e:
+        history_log = [f"An unexpected error occurred: {e}"]
+        
+    return render_template('history.html', history_log=history_log)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")

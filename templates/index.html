@@ -128,6 +128,7 @@
 <body>
     <div class="container">
         <h1>File Index Search</h1>
+        <p style="text-align: center;"><a href="/history">View Version History</a></p>
 
         <!-- Tag Cloud Section -->
         {% if top_keywords %}
@@ -197,7 +198,9 @@
                 <p>Found {{ results|length }} matching files.</p>
                 {% for result in results %}
                 <div class="result-item">
-                    <p><strong>Path:</strong> {{ result.path }}</p>
+                    <p><strong>Path:</strong> {{ result.path }} 
+                       <small>[<a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" title="Download {{ result.filename }}">Download</a>]</small>
+                    </p>
                     <p><strong>Type:</strong> {{ result.category_type }}</p>
                     <p><strong>Year:</strong> {{ result.category_year }}</p>
                     <p><strong>Extract / Summary:</strong> 
