@@ -3,132 +3,337 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>File Index Search</title>
+    <title>DenkraumNavigator: Suchwerkzeug für das denken ohne Geländer Archiv</title>
     <style>
+        /* === Global Styles === */
         body {
-            font-family: sans-serif;
-            line-height: 1.6;
-            margin: 20px;
-            background-color: #f4f4f4;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.5; /* Slightly reduced line height */
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #343a40;
+            font-size: 0.95rem; /* Slightly smaller base font */
         }
+        /* === Navbar Styles === */
+        .navbar {
+            background-color: #343a40; /* Dark background */
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end; /* Align items to the right */
+        }
+        .navbar li {
+            margin-left: 15px; /* Space between nav items */
+        }
+        .navbar a {
+            color: #f8f9fa; /* Light text */
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        .navbar a:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+        /* Style for button-like links in navbar */
+        .navbar .btn-link {
+             background-color: #6c757d;
+             border: 1px solid #6c757d;
+             color: #fff;
+        }
+        .navbar .btn-link:hover {
+             background-color: #5a6268;
+             border-color: #545b62;
+        }
+
         .container {
-            max-width: 900px;
-            margin: auto;
-            background: #fff;
+            max-width: 1100px; /* Wider container */
+            margin: 20px auto;
+            background: #ffffff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         h1, h2 {
-            color: #333;
+            color: #212529;
             text-align: center;
+            margin-bottom: 1.2em;
         }
+        h1 {
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+        h2 {
+            font-size: 1.6em;
+            font-weight: 500;
+            margin-top: 1.5em;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.4em;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        small {
+             color: #6c757d;
+             font-size: 0.9em; /* Make small text slightly smaller */
+        }
+        hr {
+             border: none;
+             border-top: 1px solid #dee2e6;
+             margin: 25px 0;
+        }
+        p {
+             margin-bottom: 0.8em;
+        }
+
+        /* === Link Button Styles === */
+        .btn-link {
+            display: inline-block; /* Needed for padding/margin */
+            padding: 4px 8px; /* Reduced padding */
+            font-size: 0.9em;
+            font-weight: 500; /* Keep slightly bold */
+            color: #fff; /* White text */
+            background-color: #6c757d; /* Default background (grey) */
+            border: 1px solid #6c757d; /* Default border */
+            border-radius: 4px; /* Keep rounded corners */
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            margin: 2px; /* Small margin around buttons */
+        }
+        .btn-link:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: #fff;
+            text-decoration: none; /* No underline on hover */
+        }
+        /* Specific colors for different buttons */
+        .btn-link-download {
+            background-color: #17a2b8; 
+            border-color: #17a2b8;
+        }
+        .btn-link-download:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+        .btn-link-reset {
+            background-color: #28a745; /* Success green color */
+            border-color: #28a745;
+            color: #fff; /* Ensure white text */
+        }
+         .btn-link-reset:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+             color: #fff;
+        }
+        /* Keep Navbar link styling distinct */
+        .btn-link-nav { 
+             /* Let navbar CSS handle navbar link appearance */
+        }
+
+        /* === Form Styles === */
         form label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            color: #495057;
         }
         form input[type="text"],
-        form input[type="number"] {
-            width: calc(100% - 22px);
+        form input[type="number"],
+        form select {
+            width: 100%; 
             padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
+            margin-bottom: 8px;
+            border: 1px solid #ced4da;
             border-radius: 4px;
+            box-sizing: border-box; 
+            background-color: #fff; 
+            font-size: 0.95em;
         }
-        form button {
-            background-color: #5cb85c;
+        form input:focus,
+        form select:focus {
+             border-color: #80bdff;
+             outline: 0;
+             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        form select[multiple] {
+             height: auto; 
+             min-height: 100px; /* Reduced height */
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Reduced min width */
+            gap: 15px;
+            margin-bottom: 15px; 
+        }
+        form button[type="submit"] {
+            background-color: #007bff;
             color: white;
             padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            display: block; 
+            margin: 15px auto 0 auto;
         }
-        form button:hover {
-            background-color: #4cae4c;
+        form button[type="submit"]:hover {
+            background-color: #0056b3;
         }
-        .results {
-            margin-top: 30px;
+
+        /* === Collapsible Filter Styles === */
+        details {
+             margin-bottom: 10px;
+             border: 1px solid #e9ecef;
+             border-radius: 5px;
+             background-color: #fdfdfd;
         }
-        .result-item {
-            background: #e9e9e9;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border-left: 5px solid #5cb85c;
+        details > summary {
+            cursor: pointer;
+            font-weight: 600;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef; 
+            border-radius: 5px 5px 0 0; 
+            list-style: none; 
+            position: relative;
+            font-size: 0.95em;
         }
-        .result-item p {
-            margin: 5px 0;
+        details > summary::before { 
+            content: '\25B6'; 
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7em;
+            color: #6c757d;
+            transition: transform 0.2s ease;
         }
-        .result-item strong {
-            color: #333;
+        details[open] > summary::before {
+             transform: translateY(-50%) rotate(90deg);
         }
-        .no-results {
-            text-align: center;
-            color: #777;
-            margin-top: 20px;
+        details > summary:hover {
+            background-color: #e9ecef;
         }
-         /* Simple grid for form layout */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+        details[open] > summary {
+             border-bottom: 1px solid #e9ecef; 
         }
-        /* Tag Cloud Styles */
+         details > div { 
+            padding: 12px;
+            border-top: none;
+            background-color: #fff;
+            border-radius: 0 0 5px 5px;
+        }
+
+        /* === Tag Cloud Styles === */
         .tag-cloud {
             text-align: center;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px dashed #ccc;
+            padding: 20px 10px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
             border-radius: 5px;
-            background-color: #fafafa;
+            background-color: #f8f9fa;
+        }
+        .tag-cloud h2 {
+             border-bottom: none; 
+             margin-bottom: 0.8em;
+             font-size: 1.5em;
         }
         .tag-cloud a {
             text-decoration: none;
-            color: #337ab7;
-            margin: 0 5px 5px 0; /* Spacing around tags */
-            display: inline-block; /* Allows spacing */
-            padding: 3px 6px; /* Padding inside tag */
-            border-radius: 3px;
-            background-color: #eee; /* Subtle background */
+            color: #007bff;
+            margin: 2px 3px; 
+            display: inline-block; 
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: #e9ecef; 
+            transition: background-color 0.2s ease;
+            font-size: 0.85em; 
         }
         .tag-cloud a:hover {
-            background-color: #ddd;
-            color: #23527c;
+            background-color: #d3d9df;
+            color: #0056b3;
         }
-        /* Collapsible Section Styles */
-        details > summary {
-            cursor: pointer;
-            font-weight: bold;
-            padding: 5px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-bottom: 5px; /* Space below summary before content */
+
+        /* === Results Styles === */
+        .results {
+            margin-top: 30px;
         }
-        details > summary:hover {
-            background-color: #e0e0e0;
+        .results h2 {
+             text-align: left;
+             font-size: 1.5em;
         }
-        details[open] > summary {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-             margin-bottom: 0;
-        }
-         details > div {
-            border: 1px solid #ccc;
-            border-top: none; /* Remove top border as it connects to summary */
+        .result-item {
+            background: #ffffff;
             padding: 15px;
-            border-bottom-left-radius: 4px;
-            border-bottom-right-radius: 4px;
-            margin-bottom: 15px; /* Space below the whole collapsible section */
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s ease;
+        }
+        .result-item:hover {
+            box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+        }
+        .result-item p {
+            margin: 6px 0;
+            font-size: 0.9em;
+            word-break: break-word; 
+        }
+        .result-item strong {
+            color: #495057;
+            margin-right: 4px;
+        }
+        .result-item p:first-child { /* Container for Path and Download */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-item p:first-child strong { 
+             font-weight: 600;
+        }
+         .result-item .btn-link-download {
+              /* Base .btn-link padding is now smaller */
+              vertical-align: middle; /* Align better with text */
+         }
+        .no-results {
+            text-align: center;
+            color: #6c757d;
+            margin-top: 25px;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">Search</a></li>
+            <li><a href="/browse/">Browse Archive</a></li>
+            <li><a href="/history">Version History</a></li>
+        </ul>
+    </nav>
+
     <div class="container">
-        <h1>File Index Search</h1>
-        <p style="text-align: center;"><a href="/history">View Version History</a></p>
+        <h1>DenkraumNavigator: Suchwerkzeug für das denken ohne Geländer Archiv</h1>
+        <!-- <p style="text-align: center;">
+            <a href="/history" class="btn-link btn-link-nav">View Version History</a>
+        </p> --> <!-- Remove the old link -->
 
         <!-- Tag Cloud Section -->
         {% if top_keywords %}
@@ -189,7 +394,10 @@
                      <input type="text" id="keywords" name="keywords" value="{{ search_terms.keywords or '' }}">
                  </div>
             </div>
-            <button type="submit">Search</button>
+            <div class="form-buttons" style="text-align: center; margin-top: 20px;">
+                 <button type="submit">Search</button>
+                 <a href="/" class="btn-link btn-link-reset">Reset Filters</a>
+            </div>
         </form>
 
         <div class="results">
@@ -199,7 +407,13 @@
                 {% for result in results %}
                 <div class="result-item">
                     <p><strong>Path:</strong> {{ result.path }} 
-                       <small>[<a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" title="Download {{ result.filename }}">Download</a>]</small>
+                       <span>
+                           <a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" 
+                              title="Download {{ result.filename }}" 
+                              class="btn-link btn-link-download">
+                               Download
+                           </a>
+                       </span>
                     </p>
                     <p><strong>Type:</strong> {{ result.category_type }}</p>
                     <p><strong>Year:</strong> {{ result.category_year }}</p>

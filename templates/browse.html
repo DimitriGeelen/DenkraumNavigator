@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Archive Navigator - {{ current_path }}</title>
+    <style>
+        /* === Global Styles (Copied from index.html) === */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.5;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #343a40;
+            font-size: 0.95rem;
+        }
+        /* === Navbar Styles === */
+        .navbar {
+            background-color: #343a40; /* Dark background */
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end; /* Align items to the right */
+        }
+        .navbar li {
+            margin-left: 15px; /* Space between nav items */
+        }
+        .navbar a {
+            color: #f8f9fa; /* Light text */
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        .navbar a:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+        .navbar .btn-link {
+             background-color: #6c757d;
+             border: 1px solid #6c757d;
+             color: #fff;
+             padding: 6px 12px; 
+             font-size: 0.9em; 
+        }
+        .navbar .btn-link:hover {
+             background-color: #5a6268;
+             border-color: #545b62;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        h1, h2 {
+            color: #212529;
+            text-align: center;
+            margin-bottom: 1.2em;
+        }
+        h1 {
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+        h2 {
+            font-size: 1.6em;
+            font-weight: 500;
+            margin-top: 1.5em;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.4em;
+            text-align: left;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+         small {
+             color: #6c757d;
+             font-size: 0.9em;
+        }
+         hr {
+             border: none;
+             border-top: 1px solid #dee2e6;
+             margin: 25px 0;
+        }
+         p {
+             margin-bottom: 0.8em;
+        }
+        /* === Link Button Styles === */
+        .btn-link {
+            display: inline-block;
+            padding: 4px 8px; 
+            font-size: 0.9em;
+            font-weight: 500; 
+            color: #fff;
+            background-color: #6c757d; 
+            border: 1px solid #6c757d; 
+            border-radius: 4px; 
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            margin: 2px; 
+        }
+        .btn-link:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: #fff;
+            text-decoration: none; 
+        }
+        .btn-link-download {
+            background-color: #17a2b8; 
+            border-color: #17a2b8;
+        }
+        .btn-link-download:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+
+        /* === Breadcrumb Styles === */
+        .breadcrumbs {
+            list-style: none;
+            padding: 10px 0;
+            margin-bottom: 1.5em;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            padding-left: 15px;
+        }
+        .breadcrumbs li {
+            display: inline;
+            font-size: 0.95em;
+        }
+        .breadcrumbs li+li:before {
+            padding: 0 8px;
+            color: #6c757d;
+            content: "/";
+        }
+        .breadcrumbs li a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .breadcrumbs li a:hover {
+            text-decoration: underline;
+        }
+        .breadcrumbs li.active {
+            color: #6c757d;
+        }
+
+        /* === File Browser List Styles === */
+        .browser-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .browser-list li {
+            padding: 10px 5px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .browser-list li:last-child {
+            border-bottom: none;
+        }
+        .browser-list .item-name {
+            font-weight: 500;
+            word-break: break-all; /* Handle long names */
+            flex-grow: 1; /* Allow name to take up space */
+            margin-right: 15px;
+        }
+        .browser-list .item-name a:hover {
+            text-decoration: underline;
+        }
+        .browser-list .item-details {
+            font-size: 0.85em;
+            color: #6c757d;
+            white-space: nowrap; /* Prevent details wrapping */
+            flex-shrink: 0; /* Don't let details shrink */
+            margin-left: 15px;
+        }
+         .browser-list .item-details .badge {
+             display: inline-block;
+             padding: 2px 6px;
+             font-size: 0.9em;
+             font-weight: 600;
+             line-height: 1;
+             color: #fff;
+             text-align: center;
+             white-space: nowrap;
+             vertical-align: baseline;
+             border-radius: .25rem;
+             background-color: #6c757d; /* Default badge */
+             margin-right: 5px;
+        }
+         .browser-list .item-details .badge-info {
+            background-color: #17a2b8;
+         }
+         .browser-list .item-details .badge-secondary {
+             background-color: #6c757d;
+         }
+         .browser-list .item-actions {
+             white-space: nowrap;
+             flex-shrink: 0; /* Don't let actions shrink */
+         }
+         .browser-list .btn-link-download {
+             padding: 4px 8px;
+             font-size: 0.85em;
+         }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">Search Page</a></li>
+            <li><a href="/history">Version History</a></li>
+            <!-- Active state could be added here -->
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Archive Navigator</h1>
+
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumbs">
+                {% for crumb in breadcrumbs %}
+                    {% if crumb.is_last %}
+                        <li class="active" aria-current="page">{{ crumb.name }}</li>
+                    {% else %}
+                        <li><a href="{{ url_for('browse', sub_path=crumb.path) }}">{{ crumb.name }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ol>
+        </nav>
+
+        <ul class="browser-list">
+            <!-- List Directories -->
+            {% for dir in directories %}
+            <li>
+                <span class="item-name">
+                    <a href="{{ url_for('browse', sub_path=dir.path) }}">📁 {{ dir.name }}</a>
+                </span>
+            </li>
+            {% endfor %}
+
+            <!-- List Files -->
+            {% for file in files %}
+            <li>
+                <span class="item-name">📄 {{ file.name }}</span>
+                {% if file.info %}
+                <span class="item-details">
+                    {% if file.info.category_type %}<span class="badge badge-info">{{ file.info.category_type }}</span>{% endif %}
+                    {% if file.info.category_year %}<span class="badge badge-secondary">{{ file.info.category_year }}</span>{% endif %}
+                    {% if file.info.keywords %}<small>Keywords: {{ file.info.keywords[:50] }}{% if file.info.keywords|length > 50 %}...{% endif %}</small>{% endif %}
+                </span>
+                {% endif %}
+                <span class="item-actions">
+                    <a href="{{ url_for('download_file', file_path=file.path.lstrip('/')) }}" 
+                       title="Download {{ file.name }}" 
+                       class="btn-link btn-link-download">
+                        Download
+                    </a>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        {% if not directories and not files %}
+            <p style="text-align:center; margin-top:2em; color:#6c757d;"><i>This directory is empty.</i></p>
+        {% endif %}
+
+    </div>
+</body>
+</html> 

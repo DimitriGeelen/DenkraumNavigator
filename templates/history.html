@@ -3,58 +3,201 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Version History</title>
+    <title>Version History - DenkraumNavigator</title>
     <style>
+        /* === Global Styles (Mostly copied from index.html) === */
         body {
-            font-family: sans-serif;
-            line-height: 1.6;
-            margin: 20px;
-            background-color: #f4f4f4;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.5;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #343a40;
+            font-size: 0.95rem;
         }
+        /* === Navbar Styles === */
+        .navbar {
+            background-color: #343a40; /* Dark background */
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end; /* Align items to the right */
+        }
+        .navbar li {
+            margin-left: 15px; /* Space between nav items */
+        }
+        .navbar a {
+            color: #f8f9fa; /* Light text */
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        .navbar a:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+        /* Style for button-like links in navbar */
+        .navbar .btn-link {
+             background-color: #6c757d;
+             border: 1px solid #6c757d;
+             color: #fff;
+             padding: 6px 12px; /* Match btn-link padding */
+             font-size: 0.9em; /* Match btn-link font size */
+        }
+        .navbar .btn-link:hover {
+             background-color: #5a6268;
+             border-color: #545b62;
+        }
+
         .container {
-            max-width: 900px;
-            margin: auto;
-            background: #fff;
+            max-width: 1100px;
+            margin: 20px auto;
+            background: #ffffff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        h1, h2 {
+            color: #212529;
+            text-align: center;
+            margin-bottom: 1.2em;
         }
         h1 {
-            color: #333;
-            text-align: center;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+        h2 {
+            font-size: 1.6em;
+            font-weight: 500;
+            margin-top: 1.5em;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.4em;
+            text-align: left;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+         small {
+             color: #6c757d;
+             font-size: 0.9em;
+             margin-left: 8px; /* Consistent spacing */
+        }
+         hr {
+             border: none;
+             border-top: 1px solid #dee2e6;
+             margin: 25px 0;
+        }
+        p {
+             margin-bottom: 0.8em;
         }
         ul {
             list-style: none;
             padding: 0;
         }
         li {
-            background: #e9e9e9;
-            padding: 10px;
-            margin-bottom: 8px;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            margin-bottom: 6px;
             border-radius: 4px;
-            font-family: monospace; /* Good for fixed-width hash/dates */
+            border: 1px solid #e9ecef;
+            font-family: monospace;
             font-size: 0.9em;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
         }
-        a {
-            color: #337ab7;
+        li span { /* For the text part */
+            margin-right: 10px; /* Space before buttons */
+            word-break: break-all; /* Break long filenames */
+        }
+        li div { /* Container for buttons */
+            white-space: nowrap; /* Prevent buttons wrapping */
+        }
+
+         /* === Link Button Styles === */
+        .btn-link {
+            display: inline-block;
+            padding: 4px 8px; /* Reduced padding */
+            font-size: 0.85em;
+            font-weight: 500;
+            color: #fff;
+            background-color: #6c757d; 
+            border: 1px solid #6c757d; 
+            border-radius: 4px;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            margin-left: 5px; 
+        }
+        .btn-link:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: #fff;
             text-decoration: none;
         }
-        a:hover {
-            text-decoration: underline;
+        /* Specific background/border colors */
+        .btn-link-download-db {
+            background-color: #17a2b8; 
+            border-color: #17a2b8;
+            color: #fff; /* Ensure consistent text color */
+        }
+         .btn-link-download-db:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+            color: #fff;
+        }
+        .btn-link-download-code {
+            background-color: #28a745; 
+            border-color: #28a745;
+            color: #fff;
+        }
+         .btn-link-download-code:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            color: #fff;
+        }
+        /* Navbar button styling */
+        .btn-link-nav {
+             /* Use base .btn-link styles, potentially override color/bg if needed */
+             /* For now, inherits grey button style */
         }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">Search</a></li>
+            <li><a href="/browse/">Browse Archive</a></li>
+            <!-- Download links remain outside navbar -->
+        </ul>
+    </nav>
+
     <div class="container">
-        <h1>Version History (Git Log)</h1>
-        <p><a href="/">&larr; Back to Search</a></p>
-        <p><a href="{{ url_for('download_code') }}">Download Current Code (.zip)</a></p>
-        <p><a href="{{ url_for('download_package') }}">Download Current Package (Code + Current DB) (.zip)</a></p>
+        <h1>Version History</h1>
+        <!-- Remove old Back to Search button placement -->
+        <p style="text-align: center; margin-bottom: 2em;">
+             <!-- <a href="/" class="btn-link btn-link-nav">&larr; Back to Search</a> -->
+             <a href="{{ url_for('download_code') }}" class="btn-link btn-link-nav btn-link-download-code">Download Current Code (.zip)</a>
+             <a href="{{ url_for('download_package') }}" class="btn-link btn-link-nav btn-link-download-db">Download Current Package (Code + Current DB) (.zip)</a>
+         </p>
         
+        <h2>Git Commit History</h2>
         {% if history_log %}
             <ul>
             {% for log_entry in history_log %}
-                <li>{{ log_entry }}</li>
+                <li><span>{{ log_entry }}</span></li>
             {% endfor %}
             </ul>
         {% else %}
@@ -68,8 +211,10 @@
             <ul>
             {% for backup_file in db_backup_files %}
                 <li>
-                    {{ backup_file }}
-                    <small>[<a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}">Download DB</a>]</small>
+                    <span>{{ backup_file }}</span>
+                    <div>
+                        <a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-db">Download DB</a>
+                    </div>
                 </li>
             {% endfor %}
             </ul>
@@ -84,8 +229,10 @@
             <ul>
             {% for backup_file in code_backup_files %}
                 <li>
-                    {{ backup_file }}
-                    <small>[<a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}">Download Code</a>]</small>
+                    <span>{{ backup_file }}</span>
+                    <div>
+                        <a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-code">Download Code</a>
+                    </div>
                 </li>
             {% endfor %}
             </ul>

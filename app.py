@@ -321,6 +321,73 @@ def history():
                            db_backup_files=db_backup_files,
                            code_backup_files=code_backup_files)
 
+@app.route('/browse/')
+@app.route('/browse/<path:sub_path>')
+def browse(sub_path=''):
+    """Displays directories and files for browsing."""
+    # --- Security and Path Handling ---
+    base_dir = os.path.abspath(INDEXED_ROOT_DIR)
+    # Prevent access above the base directory
+    requested_path = os.path.abspath(os.path.join(base_dir, sub_path))
+    
+    if not requested_path.startswith(base_dir):
+        print(f"Attempt to browse outside allowed directory: {requested_path}")
+        abort(403) # Forbidden
+        
+    if not os.path.isdir(requested_path):
+        abort(404) # Not a valid directory
+
+    # --- List Directory Contents ---
+    dirs = []
+    files = []
+    try:
+        for item in os.listdir(requested_path):
+            item_path = os.path.join(requested_path, item)
+            # Generate relative path for links
+            relative_item_path = os.path.relpath(item_path, base_dir)
+            
+            if os.path.isdir(item_path):
+                dirs.append({'name': item, 'path': relative_item_path})
+            elif os.path.isfile(item_path):
+                # Get file metadata from DB if available
+                # Note: item_path is absolute here, matching DB paths
+                file_info = query_db("""SELECT filename, category_type, category_year, keywords 
+                                         FROM files WHERE path = ?""", [item_path], one=True)
+                files.append({
+                    'name': item,
+                    'path': item_path, # Keep absolute for download link
+                    'info': file_info # This might be None if not indexed
+                })
+        # Sort directories and files alphabetically
+        dirs.sort(key=lambda x: x['name'].lower())
+        files.sort(key=lambda x: x['name'].lower())
+        
+    except PermissionError:
+        abort(403)
+    except Exception as e:
+        print(f"Error browsing directory '{requested_path}': {e}")
+        abort(500)
+
+    # --- Breadcrumb Navigation ---
+    path_parts = sub_path.split(os.sep)
+    breadcrumbs = []
+    current_crumb_path = ''
+    breadcrumbs.append({'name': 'Archive Root', 'path': ''}) # Link to base browse page
+    for i, part in enumerate(path_parts):
+        if part:
+            current_crumb_path = os.path.join(current_crumb_path, part)
+            breadcrumbs.append({'name': part, 'path': current_crumb_path})
+
+    # Don't show the last part as a link in breadcrumbs
+    if len(breadcrumbs) > 1:
+        breadcrumbs[-1]['is_last'] = True 
+
+    return render_template('browse.html', 
+                           current_path=sub_path or '/', 
+                           breadcrumbs=breadcrumbs,
+                           directories=dirs, 
+                           files=files)
+
 @app.route('/download_code')
 def download_code():
     """Creates a zip archive of the source code and sends it."""
