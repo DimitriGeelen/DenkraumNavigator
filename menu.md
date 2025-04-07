@@ -6,6 +6,8 @@
 - Browse: browse
 - History & Backups: history
 - Goals: display_project_goals
+- Learnings: display_learnings
+- Download Code: download_code
 
 ## Navbar Styling Notes (From PROJECT_NOTES.md)
 

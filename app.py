@@ -1,3 +1,4 @@
+# print("DEBUG: TOP OF app.py EXECUTING", flush=True)
 import sqlite3
 import os
 import subprocess # For running git log
@@ -12,14 +13,28 @@ import logging
 import re # For parsing git log
 import glob # For globbing file patterns
 import markdown # Import the markdown library
+from logging.handlers import RotatingFileHandler # Import handler
 
 # --- Logger Setup ---
 # Moved from bottom to ensure logger is available globally at startup
-logging.basicConfig(level=logging.DEBUG) # Use DEBUG for development
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO) # Use INFO to reduce verbosity
+logger = logging.getLogger(__name__) # Reinstate global logger for initial parsing
 
 # --- Flask App Setup ---
 app = Flask(__name__)
+
+# Explicitly configure logging
+log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+log_handler = RotatingFileHandler('flask_explicit.log', maxBytes=1000000, backupCount=3)
+log_handler.setFormatter(log_formatter)
+log_handler.setLevel(logging.INFO) # Set desired level here
+app.logger.addHandler(log_handler)
+app.logger.setLevel(logging.INFO) # Also set app logger level
+
+# Remove default Flask handler if it exists (optional, but cleaner)
+if len(app.logger.handlers) > 1:
+    app.logger.removeHandler(app.logger.handlers[0])
+
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
 
 # Set default config values (can be overridden by instance config or tests)
@@ -68,8 +83,9 @@ def parse_menu_file(filepath):
     return menu_items
 
 # Load menu globally at startup
+# print("DEBUG: About to call parse_menu_file globally", flush=True)
 main_menu = parse_menu_file(MENU_FILE)
-logger.info(f"Main menu loaded at startup: {main_menu}")
+app.logger.info(f"Main menu loaded at startup: {main_menu}") # Use app.logger
 
 # --- App Initialization / Request Handling (Remove URL generation from here) ---
 @app.before_request
@@ -812,13 +828,13 @@ def display_project_goals():
         with open(GOALS_FILE, 'r', encoding='utf-8') as f:
             goals_content = f.read()
     except FileNotFoundError:
-        goals_content = f"# {GOALS_FILE} not found.\n\nPlease create the file."
+        goals_content = f"# {GOALS_FILE} not found.\\n\\nPlease create the file."
         logger.error(f"{GOALS_FILE} not found.")
     except Exception as e:
-        goals_content = f"# Error reading {GOALS_FILE}\n\n{str(e)}"
+        goals_content = f"# Error reading {GOALS_FILE}\\n\\n{str(e)}"
         logger.error(f"Error reading {GOALS_FILE}: {e}")
 
-    return render_template('goals.html', goals_content=goals_content, menu=main_menu)
+    return render_template('goals.html', goals_content=goals_content)
 
 @app.route('/update_goals', methods=['POST'])
 def update_goals():
@@ -842,6 +858,48 @@ def update_goals():
     return redirect(url_for('display_project_goals'))
 
 # --- End Project Goals Page ---
+
+# --- Learnings Page ---
+
+LEARNINGS_FILE = 'LEARNINGS.md'
+
+@app.route('/learnings')
+def display_learnings():
+    """Displays the project learnings in an editable textarea."""
+    try:
+        with open(LEARNINGS_FILE, 'r', encoding='utf-8') as f:
+            learnings_content = f.read()
+    except FileNotFoundError:
+        learnings_content = f"# {LEARNINGS_FILE} not found.\\n\\nPlease create the file."
+        logger.error(f"{LEARNINGS_FILE} not found.")
+    except Exception as e:
+        learnings_content = f"# Error reading {LEARNINGS_FILE}\\n\\n{str(e)}"
+        logger.error(f"Error reading {LEARNINGS_FILE}: {e}")
+
+    return render_template('learnings.html', learnings_content=learnings_content)
+
+@app.route('/update_learnings', methods=['POST'])
+def update_learnings():
+    """Receives POST request to update the project learnings file."""
+    new_content = request.form.get('learnings_content')
+    if new_content is None:
+        flash('Error: No content received.', 'error')
+        return redirect(url_for('display_learnings'))
+
+    try:
+        # Basic sanitization: replace null bytes
+        safe_content = new_content.replace('\x00', '')
+        with open(LEARNINGS_FILE, 'w', encoding='utf-8') as f:
+             f.write(safe_content)
+        flash(f'{LEARNINGS_FILE} updated successfully.', 'success')
+        logger.info(f"Updated {LEARNINGS_FILE} via web interface.")
+    except Exception as e:
+        flash(f'Error updating {LEARNINGS_FILE}: {e}', 'error')
+        logger.error(f"Error writing {LEARNINGS_FILE}: {e}")
+
+    return redirect(url_for('display_learnings'))
+
+# --- End Learnings Page ---
 
 if __name__ == '__main__':
     print("Starting Flask web server...")
