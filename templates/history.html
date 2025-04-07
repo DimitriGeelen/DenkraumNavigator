@@ -1,9 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Version History - DenkraumNavigator</title>
+{% extends 'base.html' %}
+
+{% block title %}Version History - DenkraumNavigator{% endblock %}
+
+{% block content %}
     {# Link to external CSS or include shared styles if preferred #}
     <style>
         /* === Global Styles (Consider moving to a shared CSS file) === */
@@ -220,125 +219,93 @@
             display: list-item; 
         }
     </style>
-</head>
-<body>
-    {# 1. Top Navbar (Match index.html) #}
-    <nav class="navbar">
-        <ul>
-            <li><a href="/">Search</a></li>
-            <li><a href="/browse/">Browse Archive</a></li>
-            <li><a href="/history">Version History</a></li> {# Added link to self #}
-        </ul>
-    </nav>
 
     <div class="container">
-        {# 2. Header #}
-        <h1>DenkraumNavigator Version History</h1>
+        <h1>Version History & Backups</h1>
 
-        {# Flash Messages (General) - Placed near top #}
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div style="margin-bottom: 15px;">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+        {# Flash Messages - Moved to base.html #}
 
-        {# 3. List of Tagged Versions #}
-        <h2>Tagged Versions</h2>
+        <h2>Version Tags</h2>
         {% if tag_details %}
-            <ul class="content-list">
+        <ul class="content-list">
             {% for tag in tag_details %}
-                <li>
-                    <span><strong>{{ tag.name }}</strong> (Commit: {{ tag.hash }})</span>
-                    <span class="details">{{ tag.date }} - {{ tag.subject }}</span>
-                    <div class="actions">
-                         <a href="{{ url_for('download_commit_package', commit_hash=tag.hash) }}" title="Download package for {{ tag.name }}" class="btn-link btn-link-download-package">Download Package (Code+DB)</a>
-                    </div>
-                </li>
+            <li>
+                <span>
+                    <strong>{{ tag.name }}</strong> (Commit: {{ tag.hash }}, Date: {{ tag.date }})
+                    <br><small class="details">{{ tag.subject }}</small>
+                </span>
+                <div class="actions">
+                     <a href="{{ url_for('download_commit_package', commit_hash=tag.hash) }}" 
+                        class="btn-link btn-link-download-package" 
+                        title="Download package for {{ tag.name }} ({{ tag.hash }})">
+                         Download Package
+                     </a>
+                </div>
+            </li>
             {% endfor %}
-            </ul>
+        </ul>
         {% else %}
-            <p>No Git tags (starting with 'v') found.</p>
+        <p>No version tags found.</p>
         {% endif %}
 
-        <hr>
-
-        {# 4. Detailed Commit History #}
-        <h2>Detailed Commit History (Last 50)</h2>
+        <h2>Recent Commits</h2>
         {% if commit_details %}
-            <ul class="content-list"> {# Use the same class for styling #}
+        <ul class="content-list">
             {% for commit in commit_details %}
-                <li>
-                    <span><strong>{{ commit.hash }}</strong> {% if commit.tags %}<span style="color: #28a745; font-weight: bold;"> (Tags: {{ commit.tags }})</span>{% endif %}</span>
-                    <span class="details">{{ commit.date }} - {{ commit.subject }}</span>
-                    <div class="actions">
-                         {% if commit.backups_exist %}
-                            <a href="{{ url_for('download_commit_package', commit_hash=commit.hash) }}" title="Download package for commit {{ commit.hash }}" class="btn-link btn-link-download-package">Download Package</a>
-                         {% else %}
-                            <span style="color: #6c757d; font-size: 0.9em;" title="Backup files not found for this commit in /backups">Package N/A</span>
-                         {% endif %}
-                    </div>
-                </li>
+            <li>
+                <span>
+                    <strong>{{ commit.hash }}</strong> ({{ commit.date.split('T')[0] }} {{ commit.date.split('T')[1].split('+')[0] }})
+                    {% if commit.tags %}<span class="tag-highlight">[{{ commit.tags }}]</span>{% endif %}
+                    <br><small class="details">{{ commit.subject }}</small>
+                </span>
+                <div class="actions">
+                    {% if commit.backups_exist %}
+                        <a href="{{ url_for('download_commit_package', commit_hash=commit.hash) }}" 
+                           class="btn-link btn-link-download-package" 
+                           title="Download backup package for commit {{ commit.hash }}">
+                            Download Package
+                        </a>
+                    {% else %}
+                        <span class="btn-link btn-link-disabled" title="Backup files not found for this commit">Package Unavailable</span>
+                    {% endif %}
+                </div>
+            </li>
             {% endfor %}
-            </ul>
+        </ul>
         {% else %}
-            <p>Could not retrieve commit history.</p>
+        <p>No commit details found or error retrieving commits.</p>
         {% endif %}
 
-        <hr>
-
-        {# 5. Manual Backup Section #}
-        <h2>Manual Database Backups (.db)</h2>
-        <form action="{{ url_for('backup_now') }}" method="post" style="text-align: left; margin-bottom: 20px;">
-            <button type="submit" class="btn-link btn-link-reset">Create New Manual Database Backup Now</button>
+        <h2>Manual Database Backups</h2>
+        <form method="post" action="{{ url_for('backup_now') }}" style="display: inline-block; margin-bottom: 1em;">
+            <button type="submit" class="btn-link btn-link-create-backup">Create New Manual Database Backup Now</button>
         </form>
         {% if manual_db_backups %}
-            <ul class="content-list">
-            {% for backup_file in manual_db_backups %}
-                <li>
-                    <span>{{ backup_file }}</span>
-                    <div class="actions">
-                        <a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-db">Download DB</a>
-                        <form action="{{ url_for('restore_backup', filename=backup_file) }}" method="post" style="display: inline; margin-left: 5px;">
-                            <button type="submit" class="btn-link btn-link-restore" onclick="return confirm('DANGER! Restore {{ backup_file }}?\n\nThe current live database (file_index.db) will be PERMANENTLY OVERWRITTEN.\n\nThis cannot be undone. Are you absolutely sure?');">Restore</button>
-                        </form>
-                    </div>
-                </li>
+        <ul class="content-list">
+            {% for backup in manual_db_backups %}
+            <li>
+                <span>{{ backup }}</span>
+                <div class="actions">
+                    <a href="{{ url_for('download_backup', filename=backup) }}" 
+                       class="btn-link btn-link-download-db" 
+                       title="Download {{ backup }}">
+                        Download DB
+                    </a>
+                    <form method="post" action="{{ url_for('restore_backup', filename=backup) }}" style="display: inline; margin: 0; padding: 0;" onsubmit="return confirm('Are you sure you want to restore the database from this backup? The current database will be overwritten!');">
+                        <button type="submit" class="btn-link btn-link-restore" title="Restore from {{ backup }}">Restore DB</button>
+                    </form>
+                </div>
+            </li>
             {% endfor %}
-            </ul>
+        </ul>
         {% else %}
-            <p>No manual database backups found (starting with 'file_index_').</p>
+        <p>No manual database backups found.</p>
         {% endif %}
 
-        <hr>
-
-        {# 6. Commit Workflow Notes #}
+        <h2>Commit & Versioning Workflow Notes</h2>
         <div class="workflow-notes">
-            <h3>Commit & Versioning Workflow</h3>
-            <ol>
-                <li>**Run Unit Tests:** Before committing functional changes, run <code>pytest -v</code>. Fix any failures.</li>
-                <li>**Stage Changes:** Stage the functionally complete changes (<code>git add .</code> or specific files).</li>
-                <li>**Commit Functional Changes:** Commit with a conventional commit message (<code>git commit -m "type: Description"</code>).</li>
-                <li>**Verify Hook:** Observe terminal output to ensure the post-commit hook created <code>db_commit_&lt;hash&gt;</code> and <code>code_commit_&lt;hash&gt;</code> backups successfully.</li>
-                <li>**(Manual) Decide Version Bump:** Determine if the committed changes warrant a version increment (patch, minor, major).</li>
-                <li>**(Manual) Update Version File & Changelog:** If bumping version:
-                    <ul>
-                        <li>Edit the <code>VERSION</code> file (e.g., increment <code>0.7.0</code> to <code>0.7.1</code>).</li>
-                        <li>Add release notes to <code>CHANGELOG.md</code> detailing changes in the new version.</li>
-                    </ul>
-                </li>
-                <li>**(Conditional) Stage Version Files:** <code>git add VERSION CHANGELOG.md</code></li>
-                <li>**(Conditional) Commit Version Update:** Commit the version bump (<code>git commit -m "chore: Bump version to x.y.z"</code>). Verify the hook runs again.</li>
-                <li>**(Conditional) Tag Version Commit:** Tag the *version commit* with the corresponding version number (<code>git tag vx.y.z</code>).</li>
-                <li>**(Optional) Push:** Push commits and tags to remote (<code>git push origin &lt;branch&gt; --tags</code>).</li>
-            </ol>
+             Please refer to <a href="{{ url_for('static', filename='COMMIT_VERSIONING_CHANGELOG.md') }}">COMMIT_VERSIONING_CHANGELOG.md</a> for details.
+             <p><strong>Summary:</strong> Commit changes -> (Manual/Scripted) Bump Version/Changelog -> (Manual/Scripted) Tag.</p>
         </div>
-
-    </div> {# End container #}
-</body>
-</html> 
+    </div>
+{% endblock %} 

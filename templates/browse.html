@@ -1,9 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Archive Navigator - {{ current_path }}</title>
+{% extends 'base.html' %}
+
+{% block title %}Archive Navigator - {{ current_path }}{% endblock %}
+
+{% block content %}
     <style>
         /* === Global Styles (Copied from index.html) === */
         body {
@@ -220,20 +219,6 @@
              font-size: 0.85em;
          }
     </style>
-</head>
-<body>
-    <nav>
-        <ul>
-            <!-- DEBUG: g object in base.html: {{ g }} -->
-            {% if g.main_menu %}
-                {% for item in g.main_menu %}
-                    <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
-                {% endfor %}
-            {% else %}
-                <li><a href="/">Home (Menu Error)</a></li>
-            {% endif %}
-        </ul>
-    </nav>
 
     <div class="container">
         <h1>Archive Navigator</h1>
@@ -288,5 +273,4 @@
         {% endif %}
 
     </div>
-</body>
-</html> 
+{% endblock %} 
