@@ -596,7 +596,8 @@ logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")
-    print("Ensure the database '{}' exists (run indexer.py first).".format(current_app.config['DATABASE']))
+    # Access config via the app object here, not current_app
+    print("Ensure the database '{}' exists (run indexer.py first).".format(app.config['DATABASE']))
     print("Access the application at http://127.0.0.1:5000")
     # Use debug=True only for development, not production
     app.run(debug=True, host='0.0.0.0') # Host 0.0.0.0 makes it accessible on network 

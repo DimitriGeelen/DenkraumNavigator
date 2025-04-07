@@ -34,6 +34,20 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 *   Always add unit tests for new functionality.
 
+## Commit Steps
+
+1.  **(If applicable)** Run relevant unit tests (`pytest -v`) to ensure no regressions.
+2.  Stage the changed files (`git add <file1> <file2> ...` or `git add .`).
+3.  Commit the changes with a descriptive message following conventional commit standards (`git commit -m "type: Short description"`). Examples:
+    *   `feat:` (new feature)
+    *   `fix:` (bug fix)
+    *   `test:` (adding/fixing tests)
+    *   `docs:` (documentation changes)
+    *   `refactor:` (code changes that neither fix a bug nor add a feature)
+    *   `style:` (code style changes - often handled by linters)
+4.  Observe the terminal output immediately after commit to verify the `post-commit` hook ran successfully and created the `db_commit_*` and `code_commit_*` backups.
+5.  **(Optional/Future)** Push the commit and any tags to the remote repository (`git push origin <branch> --tags`).
+
 ## Open Questions / Ideas
 
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
