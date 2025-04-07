@@ -9,15 +9,25 @@
 <body>
     <nav>
         <ul>
-            <!-- DEBUG: g object in base.html: {{ g }} -->
+            <!-- DEBUG: g.main_menu before loop: {{ g.main_menu }} -->
             {% if g.main_menu %}
                 {% for item in g.main_menu %}
+                    <!-- DEBUG: Rendering item: {{ item }} -->
                     <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
                 {% endfor %}
             {% else %}
+                <!-- DEBUG: g.main_menu is empty or None -->
                 <li><a href="/">Home (Menu Error)</a></li>
             {% endif %}
+            {# <li><a href="{{ url_for('browse') }}">Browse Test</a></li> #}
         </ul>
+        <!-- DEBUG: Testing individual url_for calls -->
+        {# <p style="font-size: 0.7em; color: grey;">
+            Test Index: {{ url_for('index') }} <br>
+            Test Browse: {{ url_for('browse') }} <br>
+            Test History: {{ url_for('history') }} <br>
+            Test Goals: {{ url_for('display_project_goals') }} <br>
+        </p> #}
     </nav>
 
     {# Flash Messages #}
