@@ -9,11 +9,29 @@
 <body>
     <nav>
         <ul>
-            <li><a href="{{ url_for('index') }}">Search</a></li>
-            <li><a href="{{ url_for('browse') }}">Browse</a></li>
-            <li><a href="{{ url_for('history') }}">History & Backups</a></li>
-            <li><a href="{{ url_for('view_goals') }}">Goals</a></li>
+            {% if menu %}
+                {% for item in menu %}
+                    <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
+                {% endfor %}
+            {% else %}
+                <li><a href="/">Home (Menu Error)</a></li>
+            {% endif %}
         </ul>
     </nav>
+
+    {# Flash Messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class=flash-messages>
+            {% for category, message in messages %}
+                <li class="flash-{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html> 

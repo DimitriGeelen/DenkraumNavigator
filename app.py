@@ -203,6 +203,30 @@ def backup_now():
     # Redirect back to the history page (or wherever appropriate)
     return redirect(url_for('history'))
 
+MENU_FILE = 'menu.md'
+
+def parse_menu_file(filepath):
+    """Parses the menu.md file into a list of menu items."""
+    menu_items = []
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('-') and ':' in line:
+                    try:
+                        text, endpoint = line[1:].split(':', 1)
+                        menu_items.append({'text': text.strip(), 'endpoint': endpoint.strip()})
+                    except ValueError:
+                        logger.warning(f"Could not parse menu line: {line}")
+    except FileNotFoundError:
+        logger.error(f"Menu file not found: {filepath}. Returning empty menu.")
+    except Exception as e:
+        logger.error(f"Error reading menu file {filepath}: {e}. Returning empty menu.")
+    return menu_items
+
+# Load menu at startup
+main_menu = parse_menu_file(MENU_FILE)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = []
@@ -255,7 +279,8 @@ def index():
                            search_terms=search_terms, 
                            top_keywords=top_keywords,
                            distinct_types=distinct_types,
-                           distinct_years=distinct_years)
+                           distinct_years=distinct_years,
+                           menu=main_menu)
 
 @app.route('/download/') # Note the trailing slash
 @app.route('/download/<path:file_path>')
@@ -557,7 +582,8 @@ def history():
     return render_template('history.html', 
                            tag_details=tag_details,
                            commit_details=commit_details, # Pass commit details
-                           manual_db_backups=manual_db_backups)
+                           manual_db_backups=manual_db_backups,
+                           menu=main_menu)
                            # Remove old backup lists
                            # commit_db_backups=commit_db_backups,
                            # commit_code_backups=commit_code_backups)
@@ -627,7 +653,8 @@ def browse(sub_path=''):
                            current_path=sub_path or '/', 
                            breadcrumbs=breadcrumbs,
                            directories=dirs, 
-                           files=files)
+                           files=files,
+                           menu=main_menu)
 
 @app.route('/download_code')
 def download_code():
@@ -739,7 +766,7 @@ def view_goals():
         goals_content = f"# Error reading {GOALS_FILE}\n\n{str(e)}"
         logger.error(f"Error reading {GOALS_FILE}: {e}")
 
-    return render_template('goals.html', goals_content=goals_content)
+    return render_template('goals.html', goals_content=goals_content, menu=main_menu)
 
 @app.route('/update_goals', methods=['POST'])
 def update_goals():
@@ -773,5 +800,5 @@ if __name__ == '__main__':
     # Access config via the app object here, not current_app
     print("Ensure the database '{}' exists (run indexer.py first).".format(app.config['DATABASE']))
     print("Access the application at http://127.0.0.1:5000")
-    # Use debug=True only for development, not production
-    app.run(debug=True, host='0.0.0.0') # Host 0.0.0.0 makes it accessible on network 
+    # Use debug=False to reduce memory usage and prevent OOM kills
+    app.run(debug=False, host='0.0.0.0') # Host 0.0.0.0 makes it accessible on network 
