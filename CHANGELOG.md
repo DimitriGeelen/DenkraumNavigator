@@ -5,26 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2025-04-07
 
 ### Added
-- Initial commit history and backup download functionality.
-- Browse archive functionality.
-- Manual DB backup creation.
-- Automatic commit-based DB and Code backups via post-commit hook.
-- Database restore functionality (from History page).
-- Pytest testing framework with tests for backup/restore and search.
-- VERSION file and CHANGELOG.md.
-- Commit & Versioning workflow documentation.
+- Detailed Commit History section on `/history` page:
+    - Lists recent commits with hash, date, subject, and associated tags.
+    - Provides a "Download Package" link for each commit *only if* corresponding DB and Code backups exist.
+- Backup verification logic in `post-commit` hook:
+    - Checks for file existence and non-zero size after DB copy and code archive.
+    - Exits with non-zero status on backup failure.
+    - Uses `git archive` with specific paths for more reliable code backup.
+- Unit tests (`test_backup_verification.py`) for backup verification logic.
+- Browse page (`/browse/`) for navigating the indexed directory structure.
+- Project notes (`PROJECT_NOTES.md`) section on server restart script.
+- Project notes section on automated backups and verification.
+- Project notes section on navbar styling solution.
 
 ### Changed
-- Refactored app.py to use app.config for paths (DB, Backups, Indexed Root).
+- Updated `/history` page requirements in `PROJECT_NOTES.md` to include detailed commit list.
+- Refactored `/history` route in `app.py` to fetch detailed commit data and check backup status.
+- Made `/download_commit_package` route in `app.py` more robust using `glob`.
 
 ### Fixed
-- Navbar styling consistency on history page.
-- Startup error when using `current_app` outside context.
-- Post-commit hook failures (shebang, git archive exclusions).
-- Unit test failures (backup dir path, flash message checking, status codes).
+- Persistent navbar styling bug on `/history` page where links appeared as boxes.
+- Potential failure in `post-commit` hook when archiving code (removed `.git/hooks/post-commit` from archive paths).
+- Potential 404 errors for `/download_commit_package` route when backup files were missing.
+
+### Removed
+- Old sections listing individual commit DB/Code backup files from `/history` page (replaced by Detailed Commit History).
 
 ## [0.7.0] - YYYY-MM-DD
 ### Added
