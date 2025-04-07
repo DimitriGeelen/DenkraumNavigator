@@ -13,7 +13,9 @@
             {% if g.main_menu %}
                 {% for item in g.main_menu %}
                     <!-- DEBUG: Rendering item: {{ item }} -->
-                    <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
+                    {# Use pre-generated URL #}
+                    <li><a href="{{ item.url }}">{{ item.text }}</a></li>
+                    {# Old way: <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li> #}
                 {% endfor %}
             {% else %}
                 <!-- DEBUG: g.main_menu is empty or None -->

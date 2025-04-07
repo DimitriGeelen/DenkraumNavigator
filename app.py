@@ -78,9 +78,19 @@ def before_request():
     os.makedirs(backup_dir, exist_ok=True)
     g.DATABASE = current_app.config['DATABASE']
     g.BACKUP_DIR = current_app.config['BACKUP_DIR']
-    # Add main_menu to the request context g
-    g.main_menu = main_menu 
-    # Remove g.main_menu generation (this comment seems outdated now)
+    # Add main_menu to the request context g, generating URLs here
+    g.main_menu = []
+    for item in main_menu: # Use the globally loaded raw menu data
+        try:
+            # Generate URL within the app context
+            url = url_for(item['endpoint'])
+            g.main_menu.append({'text': item['text'], 'url': url})
+        except Exception as e:
+            logger.error(f"Error generating URL for endpoint '{item.get('endpoint')}': {e}")
+            # Optionally skip this item or add a placeholder
+            # g.main_menu.append({'text': item.get('text', 'Error'), 'url': '#'})
+    logger.debug(f"Menu with URLs generated for request: {g.main_menu}")
+    # g.main_menu = main_menu # Old way, just assigning
 
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
