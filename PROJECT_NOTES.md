@@ -37,9 +37,9 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Server Management
 
-**Reliable Restart Procedure:**
-1.  Kill existing server process: `pkill -9 -f 'python app.py' || true`
-2.  Start new server process: `source .venv/bin/activate && python app.py` (run in background)
+*   **Starting:** `source .venv/bin/activate && python app.py`
+*   **Stopping:** Find the process ID (`ps aux | grep 'python app.py'`) and use `kill <PID>`, or use `pkill -f 'python app.py'`.
+*   **Reliable Restart Script:** Use `./restart_server.sh`. This script handles stopping existing processes before starting a new one, preventing "Address already in use" errors.
 
 ## Commit & Versioning Workflow
 
@@ -61,4 +61,37 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 ## Open Questions / Ideas
 
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
-*   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions). 
+*   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions).
+
+## Version History Page (`/history`)
+
+**Desired Structure:**
+
+1.  **Top Navbar:** Match the design/links from `index.html`.
+2.  **Header:** Display "(App Name) Version History" (using H1).
+3.  **List of Tagged Versions:** Iterate through Git tags.
+    *   Display: Tag Name (e.g., v0.7.0), associated Commit ID (short hash), Commit Date, Commit Subject (first line of message).
+    *   Include a "Download Package" button for each tagged version, linking to a route that bundles the code and database backup associated with that tag's commit.
+4.  **Manual Backup Section:**
+    *   Include the "Create New Manual Database Backup Now" button.
+    *   List existing manual DB backups (`file_index_*.db`) with Download and Restore buttons.
+5.  **Commit Backup Sections:**
+    *   List commit-based DB backups (`db_commit_*.db`) with Download/Restore buttons.
+    *   List commit-based Code backups (`code_commit_*.zip`) with Download buttons.
+6.  **Commit Workflow Notes:** Display the steps from the "Commit & Versioning Workflow" section of these notes.
+
+*Note: A button to trigger a commit directly from the web UI is generally impractical and potentially unsafe, so it will be omitted. Commits should be made via the command line.*
+
+## Design Notes
+
+### Top Navbar Styling Issue & Solution
+
+*   **Problem:** Applying global styles directly to common HTML elements like `<li>` (e.g., setting a `background` or `padding`) caused unexpected visual bugs in the top navigation bar. Specifically, the navbar links (`<a>` tags inside `<li>` tags) inherited or were affected by the general `<li>` styles, making them appear as boxes instead of plain text links, even when `.navbar a` styles were set correctly.
+*   **Solution:**
+    1.  **Avoid Global Styles on Generic Elements:** Do not apply backgrounds, borders, or significant padding directly to generic selectors like `li` if those elements are used in structurally different components (like navbars and content lists).
+    2.  **Use Specific Selectors for Content:** For styling list items within the main content area (e.g., backup lists, version lists), apply styles using a more specific selector. Add a class (e.g., `content-list`) to the parent `<ul>` and target the list items with `.content-list li`.
+    3.  **Explicitly Reset Component Styles:** For components like the navbar, explicitly define styles for its child elements (e.g., `.navbar li`) to reset any potentially inherited properties (like `padding`, `border`, `background`, `display`) to ensure they don't interfere with the intended appearance.
+
+## Testing
+
+... 

@@ -9,6 +9,8 @@ from flask import Flask, render_template, request, g, send_file, abort, flash, r
 from collections import Counter
 import math # For tag cloud scaling
 import logging
+import re # For parsing git log
+import glob # For globbing file patterns
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
@@ -380,9 +382,107 @@ def restore_backup(filename):
 
     return redirect(url_for('history'))
 
+def get_tag_details():
+    """Gets details for each Git tag (name, commit hash, date, subject)."""
+    tags = []
+    try:
+        # Format: tagname<SEP>commithash<SEP>commitdate(iso8601)<SEP>subject
+        # Use a unique separator like <||> unlikely to be in subject
+        sep = "<||>"
+        # List tags, dereference to get commit info, sort by version descending
+        cmd = [
+            'git', 'tag', '-l', 'v*', '--sort=-v:refname', 
+            f'--format=%(refname:short){sep}%(objectname:short){sep}%(committerdate:iso8601){sep}%(subject)'
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True, encoding='utf-8')
+        
+        for line in result.stdout.strip().split('\n'):
+            if not line:
+                continue
+            parts = line.split(sep, 3)
+            if len(parts) == 4:
+                tag_name, commit_hash, date_str, subject = parts
+                tags.append({
+                    'name': tag_name,
+                    'hash': commit_hash,
+                    'date': date_str.split(' ')[0], # Just get YYYY-MM-DD
+                    'subject': subject
+                })
+    except FileNotFoundError:
+        logger.error("'git' command not found when trying to get tag details.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error running git tag command: {e.stderr}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred retrieving tag details: {e}")
+    return tags
+
+@app.route('/download_commit_package/<commit_hash>')
+def download_commit_package(commit_hash):
+    """Creates a zip archive of the code and DB backup for a specific commit hash."""
+    backup_dir = current_app.config['BACKUP_DIR']
+    # Basic validation
+    if not re.match(r'^[a-f0-9]+$', commit_hash):
+        abort(400, "Invalid commit hash format.")
+        
+    # We expect filenames based on the post-commit hook (which uses short hash)
+    # Use the first 7 chars from the input hash for consistency
+    short_hash = commit_hash[:7]
+    
+    # Use glob to find matching files, prioritizing the short hash pattern
+    db_backup_glob = os.path.join(backup_dir, f"db_commit_{short_hash}*.db")
+    code_backup_glob = os.path.join(backup_dir, f"code_commit_{short_hash}*.zip")
+    
+    db_backup_files = glob.glob(db_backup_glob)
+    code_backup_files = glob.glob(code_backup_glob)
+
+    # Check if files exist
+    if not db_backup_files:
+        logger.warning(f"Commit DB backup not found matching pattern {db_backup_glob}")
+        abort(404) # Not Found
+    if not code_backup_files:
+        logger.warning(f"Commit Code backup not found matching pattern {code_backup_glob}")
+        abort(404) # Not Found
+
+    # Use the first match found by glob
+    db_backup_file = db_backup_files[0]
+    code_backup_file = code_backup_files[0]
+    logger.info(f"Found backup files for commit {short_hash}: DB={os.path.basename(db_backup_file)}, Code={os.path.basename(code_backup_file)}")
+
+    # --- Create a temporary zip file ---
+    output_filename = f"DenkraumNavigator_package_{commit_hash}.zip"
+    memory_file = io.BytesIO()
+
+    try:
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # Add the DB backup
+            zf.write(db_backup_file, arcname=os.path.basename(db_backup_file)) 
+            
+            # Add the code backup contents (extract and re-add to avoid nested zip)
+            # Alternatively, just include both zips? Let's add the code zip directly for simplicity.
+            zf.write(code_backup_file, arcname=os.path.basename(code_backup_file))
+            
+            # Optionally add other project files like notes, version, etc.
+            if os.path.exists('PROJECT_NOTES.md'):
+                zf.write('PROJECT_NOTES.md', arcname='PROJECT_NOTES.md')
+            if os.path.exists('CHANGELOG.md'):
+                 zf.write('CHANGELOG.md', arcname='CHANGELOG.md')
+            if os.path.exists('VERSION'):
+                 zf.write('VERSION', arcname='VERSION')
+                 
+        memory_file.seek(0)
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=output_filename
+        )
+    except Exception as e:
+        logger.error(f"Error creating package zip for commit {commit_hash}: {e}")
+        abort(500)
+
 @app.route('/history')
 def history():
-    """Displays git commit history and lists available backups."""
+    """Displays git commit history, tag details, and lists available backups."""
     backup_dir = current_app.config['BACKUP_DIR'] # Use config
     # Get Git log
     history_log = []
@@ -390,7 +490,7 @@ def history():
         # Use a format that's easy to parse/display
         log_format = "%h -- %ad -- %s" # hash -- date -- subject
         date_format = "%Y-%m-%d %H:%M" # Short date format
-        git_log_cmd = ["git", "log", "--pretty=format:" + log_format, "--date=format:" + date_format, "-n", "30"] # Show last 30 commits
+        git_log_cmd = ["git", "log", "--pretty=format:" + log_format, "--date=format:" + date_format, "-n", "50"] # Show last 50 commits
         
         result = subprocess.run(git_log_cmd, capture_output=True, text=True, check=True)
         history_log = result.stdout.strip().split('\n')
@@ -403,6 +503,9 @@ def history():
     except Exception as e:
         history_log = [f"An unexpected error occurred retrieving git log: {e}"]
         logger.error(f"An unexpected error occurred retrieving git log: {e}")
+
+    # Get Tag Details
+    tag_details = get_tag_details()
 
     # Get Backups
     manual_db_backups = []
@@ -424,6 +527,7 @@ def history():
 
     return render_template('history.html', 
                            history_log=history_log, 
+                           tag_details=tag_details, # Pass tag details
                            manual_db_backups=manual_db_backups,
                            commit_db_backups=commit_db_backups,
                            commit_code_backups=commit_code_backups,
