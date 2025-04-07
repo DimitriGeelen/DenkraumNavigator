@@ -41,24 +41,9 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 *   **Stopping:** Find the process ID (`ps aux | grep 'python app.py'`) and use `kill <PID>`, or use `pkill -f 'python app.py'`.
 *   **Reliable Restart Script:** Use `./restart_server.sh`. This script handles stopping existing processes before starting a new one, preventing "Address already in use" errors.
 
-## Commit & Versioning Workflow
+## Commit & Versioning
 
-**Important Note (AI Assistant Interaction):** When instructing the AI assistant to perform a commit using the terminal tool, avoid using multi-line commit messages within the `-m "..."` flag. Use a single-line message instead, or the command may fail.
-
-1.  **Run Unit Tests:** Before committing functional changes, run `pytest -v`. Fix any failures.
-2.  **Stage Changes:** Stage the functionally complete changes (`git add .` or specific files).
-3.  **Commit Functional Changes:** Commit with a conventional commit message (`git commit -m "type: Description"`).
-4.  **Verify Hook:** Observe terminal output to ensure the post-commit hook created `db_commit_<hash>` and `code_commit_<hash>` backups successfully.
-5.  **(Manual) Decide Version Bump:** Determine if the committed changes warrant a version increment (patch, minor, major).
-6.  **(Manual) Update Version File & Changelog:** If bumping version:
-    *   Edit the `VERSION` file (e.g., increment `0.7.0` to `0.7.1`).
-    *   Add release notes to `CHANGELOG.md` detailing changes in the new version.
-7.  **(Conditional) Stage Version Files:** `git add VERSION CHANGELOG.md`
-8.  **(Conditional) Commit Version Update:** Commit the version bump (`git commit -m "chore: Bump version to x.y.z"`). Verify the hook runs again.
-9.  **(Conditional) Tag Version Commit:** Tag the *version commit* with the corresponding version number (`git tag vx.y.z`).
-10. **(Optional) Push:** Push commits and tags to remote (`git push origin <branch> --tags`).
-
-*Note: Backups are primarily named by commit hash. Tags link semantic versions (vX.Y.Z) to specific commits (and thus their hash-named backups) in the Git history.*
+*Please refer to the `COMMIT_VERSIONING_CHANGELOG.md` file for the detailed workflow for commits, version bumps, and changelog updates.*
 
 ## Open Questions / Ideas
 
@@ -98,6 +83,10 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
     1.  **Avoid Global Styles on Generic Elements:** Do not apply backgrounds, borders, or significant padding directly to generic selectors like `li` if those elements are used in structurally different components (like navbars and content lists).
     2.  **Use Specific Selectors for Content:** For styling list items within the main content area (e.g., backup lists, version lists), apply styles using a more specific selector. Add a class (e.g., `content-list`) to the parent `<ul>` and target the list items with `.content-list li`.
     3.  **Explicitly Reset Component Styles:** For components like the navbar, explicitly define styles for its child elements (e.g., `.navbar li`) to reset any potentially inherited properties (like `padding`, `border`, `background`, `display`) to ensure they don't interfere with the intended appearance.
+
+## Recent Fixes (2025-04-07)
+
+*   **Commit Backup Links:** Corrected the glob patterns in `app.py` (`get_commit_details` and `download_commit_package` functions) to match the actual backup filenames created by the `post-commit` hook (`commit_<hash>.*` instead of `db_commit_*` / `code_commit_*`). This ensures the "Download Package" links appear correctly on the `/history` page and function as expected.
 
 # Another test line for commit verification.
 # Test line for minor commit after fixing backup links.
