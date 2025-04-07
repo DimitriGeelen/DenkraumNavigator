@@ -15,4 +15,7 @@ ruff
 
 # Testing Tools
 pytest
-pytest-flask 
+pytest-flask
+
+# Versioning Helper
+semver 
