@@ -11,6 +11,7 @@ import math # For tag cloud scaling
 import logging
 import re # For parsing git log
 import glob # For globbing file patterns
+import markdown # Import the markdown library
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
@@ -418,35 +419,28 @@ def get_tag_details():
 
 @app.route('/download_commit_package/<commit_hash>')
 def download_commit_package(commit_hash):
-    """Creates a zip archive of the code and DB backup for a specific commit hash."""
-    backup_dir = current_app.config['BACKUP_DIR']
-    # Basic validation
-    if not re.match(r'^[a-f0-9]+$', commit_hash):
-        abort(400, "Invalid commit hash format.")
-        
-    # We expect filenames based on the post-commit hook (which uses short hash)
-    # Use the first 7 chars from the input hash for consistency
-    short_hash = commit_hash[:7]
-    
-    # Use glob to find matching files, prioritizing the short hash pattern
-    db_backup_glob = os.path.join(backup_dir, f"db_commit_{short_hash}*.db")
-    code_backup_glob = os.path.join(backup_dir, f"code_commit_{short_hash}*.zip")
-    
+    """Creates and sends a zip package containing code and DB backup for a specific commit."""
+    backup_dir = 'backups'
+    db_backup_glob = os.path.join(backup_dir, f'commit_{commit_hash}*.db')
+    code_backup_glob = os.path.join(backup_dir, f'commit_{commit_hash}*.zip')
+    logger.debug(f"Attempting to find backups for commit {commit_hash} in {backup_dir}")
+    logger.debug(f"Using DB glob pattern: {db_backup_glob}")
+    logger.debug(f"Using Code glob pattern: {code_backup_glob}")
+
     db_backup_files = glob.glob(db_backup_glob)
     code_backup_files = glob.glob(code_backup_glob)
+    logger.debug(f"Glob result for DB pattern {db_backup_glob}: {db_backup_files}")
+    logger.debug(f"Glob result for Code pattern {code_backup_glob}: {code_backup_files}")
 
-    # Check if files exist
-    if not db_backup_files:
+    if not db_backup_files or not code_backup_files:
         logger.warning(f"Commit DB backup not found matching pattern {db_backup_glob}")
-        abort(404) # Not Found
-    if not code_backup_files:
         logger.warning(f"Commit Code backup not found matching pattern {code_backup_glob}")
-        abort(404) # Not Found
+        abort(404, description="Required backup files not found for this commit.")
 
     # Use the first match found by glob
     db_backup_file = db_backup_files[0]
     code_backup_file = code_backup_files[0]
-    logger.info(f"Found backup files for commit {short_hash}: DB={os.path.basename(db_backup_file)}, Code={os.path.basename(code_backup_file)}")
+    logger.info(f"Found backup files for commit {commit_hash}: DB={os.path.basename(db_backup_file)}, Code={os.path.basename(code_backup_file)}")
 
     # --- Create a temporary zip file ---
     output_filename = f"DenkraumNavigator_package_{commit_hash}.zip"
@@ -505,11 +499,19 @@ def get_commit_details(limit=50):
                 tag_string = ", ".join(tags) if tags else ""
 
                 # Check for backup file existence
-                db_backup_pattern = os.path.join(backup_dir, f"db_commit_{commit_hash}*.db")
-                code_backup_pattern = os.path.join(backup_dir, f"code_commit_{commit_hash}*.zip")
-                db_exists = bool(glob.glob(db_backup_pattern))
-                code_exists = bool(glob.glob(code_backup_pattern))
+                logger.debug(f"Checking backups for commit {commit_hash} in dir {backup_dir}") # Log dir
+                db_backup_pattern = os.path.join(backup_dir, f"commit_{commit_hash}*.db")
+                code_backup_pattern = os.path.join(backup_dir, f"commit_{commit_hash}*.zip")
+                logger.debug(f"DB Pattern: {db_backup_pattern}") # Log pattern
+                logger.debug(f"Code Pattern: {code_backup_pattern}") # Log pattern
+                db_backup_files = glob.glob(db_backup_pattern)
+                code_backup_files = glob.glob(code_backup_pattern)
+                logger.debug(f"Glob result for DB: {db_backup_files}") # Log result
+                logger.debug(f"Glob result for Code: {code_backup_files}") # Log result
+                db_exists = bool(db_backup_files)
+                code_exists = bool(code_backup_files)
                 backups_exist = db_exists and code_exists
+                logger.debug(f"Setting backups_exist for {commit_hash}: {backups_exist}") # Log flag
 
                 commits.append({
                     'hash': commit_hash,
@@ -719,6 +721,48 @@ def download_package():
     except Exception as e:
         print(f"Error creating package zip file: {e}")
         abort(500)
+
+# --- Project Goals Page ---
+
+GOALS_FILE = 'PROJECT_GOALS.md'
+
+@app.route('/goals')
+def view_goals():
+    """Displays the project goals in an editable textarea."""
+    try:
+        with open(GOALS_FILE, 'r', encoding='utf-8') as f:
+            goals_content = f.read()
+    except FileNotFoundError:
+        goals_content = f"# {GOALS_FILE} not found.\n\nPlease create the file."
+        logger.error(f"{GOALS_FILE} not found.")
+    except Exception as e:
+        goals_content = f"# Error reading {GOALS_FILE}\n\n{str(e)}"
+        logger.error(f"Error reading {GOALS_FILE}: {e}")
+
+    return render_template('goals.html', goals_content=goals_content)
+
+@app.route('/update_goals', methods=['POST'])
+def update_goals():
+    """Receives POST request to update the project goals file."""
+    new_content = request.form.get('goals_content')
+    if new_content is None:
+        flash('Error: No content received.', 'error')
+        return redirect(url_for('view_goals'))
+
+    try:
+        # Basic sanitization: replace null bytes
+        safe_content = new_content.replace('\x00', '')
+        with open(GOALS_FILE, 'w', encoding='utf-8') as f:
+            f.write(safe_content)
+        flash(f'{GOALS_FILE} updated successfully.', 'success')
+        logger.info(f"Updated {GOALS_FILE} via web interface.")
+    except Exception as e:
+        flash(f'Error updating {GOALS_FILE}: {e}', 'error')
+        logger.error(f"Error writing {GOALS_FILE}: {e}")
+
+    return redirect(url_for('view_goals'))
+
+# --- End Project Goals Page ---
 
 # Add logger setup if not already present
 logging.basicConfig(level=logging.DEBUG) # Use DEBUG for development

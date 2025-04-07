@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Project Goals{% endblock %}
+
+{% block content %}
+    <h1>Project Goals</h1>
+
+    <div class="info-box">
+        <p>This page displays the current project goals stored in <code>PROJECT_GOALS.md</code>.</p>
+        <p>You can edit the goals directly in the text area below and click "Save Goals" to update the file.</p>
+        <p><strong>Note:</strong> This editor uses Markdown format.</p>
+    </div>
+
+    <form action="{{ url_for('update_goals') }}" method="post">
+        <textarea name="goals_content" rows="25" style="width: 95%; font-family: monospace; margin-bottom: 10px;">{{ goals_content }}</textarea>
+        <br>
+        <button type="submit" class="button">Save Goals</button>
+    </form>
+
+{% endblock %} 
