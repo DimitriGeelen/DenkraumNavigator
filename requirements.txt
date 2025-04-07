@@ -11,4 +11,8 @@ Flask
 
 # Development/Linting Tools
 flake8
-ruff 
+ruff
+
+# Testing Tools
+pytest
+pytest-flask 

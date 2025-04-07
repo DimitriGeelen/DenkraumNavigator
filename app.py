@@ -5,31 +5,37 @@ import zipfile
 import io
 import datetime # For timestamp in zip filename
 import shutil # Import shutil for file copying
-from flask import Flask, render_template, request, g, send_file, abort, flash, redirect, url_for # Add flash, redirect, url_for
+from flask import Flask, render_template, request, g, send_file, abort, flash, redirect, url_for, current_app # Add flash, redirect, url_for, current_app
 from collections import Counter
 import math # For tag cloud scaling
 import logging
 
-DATABASE = 'file_index.db'
-# IMPORTANT: Define the root directory that contains the indexed files for security
-# This should be the directory you passed to indexer.py (e.g., /dol-data-archive2)
-INDEXED_ROOT_DIR = "/dol-data-archive2"
-BACKUP_DIR = "backups"
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
 
-# Ensure backup directory exists
-os.makedirs(BACKUP_DIR, exist_ok=True)
+# Set default config values (can be overridden by instance config or tests)
+app.config.setdefault('DATABASE', 'file_index.db')
+app.config.setdefault('INDEXED_ROOT_DIR', '/dol-data-archive2') # Ensure this default is correct
+app.config.setdefault('BACKUP_DIR', 'backups') # Default backup dir
 
+# --- App Initialization --- 
+@app.before_request
+def before_request():
+    # Ensure backup directory exists before handling requests that might use it
+    backup_dir = current_app.config.get('BACKUP_DIR', 'backups') # Use default if not set
+    os.makedirs(backup_dir, exist_ok=True)
+    # Make DATABASE and BACKUP_DIR easily accessible in templates if needed
+    g.DATABASE = current_app.config['DATABASE']
+    g.BACKUP_DIR = current_app.config['BACKUP_DIR']
+    
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
     db = getattr(g, '_database', None)
     if db is None:
-        if not os.path.exists(DATABASE):
+        if not os.path.exists(current_app.config['DATABASE']):
              # In a real app, handle this more gracefully, maybe redirect to an error page
-             raise FileNotFoundError(f"Database file '{DATABASE}' not found. Run indexer first.")
-        db = g._database = sqlite3.connect(DATABASE)
+             raise FileNotFoundError(f"Database file '{current_app.config['DATABASE']}' not found. Run indexer first.")
+        db = g._database = sqlite3.connect(current_app.config['DATABASE'])
         db.row_factory = sqlite3.Row # Return rows as dictionary-like objects
     return db
 
@@ -164,20 +170,23 @@ def get_top_keywords(limit=50):
 
 def create_backup():
     """Creates a timestamped backup of the database file."""
-    if not os.path.exists(DATABASE):
-        logger.error("Database file not found, cannot create backup.")
+    db_path = current_app.config['DATABASE'] # Use config
+    backup_dir = current_app.config['BACKUP_DIR'] # Use config
+    
+    if not os.path.exists(db_path):
+        logger.error(f"Database file {db_path} not found, cannot create backup.")
         return None
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_filename = f"file_index_{timestamp}.db"
-    backup_path = os.path.join(BACKUP_DIR, backup_filename)
+    backup_path = os.path.join(backup_dir, backup_filename)
 
     try:
-        shutil.copy2(DATABASE, backup_path) # copy2 preserves metadata
+        shutil.copy2(db_path, backup_path) # copy2 preserves metadata
         logger.info(f"Database backup created: {backup_path}")
         return backup_path
     except Exception as e:
-        logger.error(f"Failed to create database backup: {e}")
+        logger.error(f"Failed to create database backup to {backup_dir}: {e}")
         return None
 
 @app.route('/backup', methods=['POST'])
@@ -261,7 +270,7 @@ def download_file(file_path=None):
     # 2. Ensure the requested path is within the allowed INDEXED_ROOT_DIR
     # os.path.commonpath requires Python 3.5+ 
     # For broader compatibility, we check if safe_path starts with the root dir
-    if not safe_path.startswith(os.path.abspath(INDEXED_ROOT_DIR) + os.sep):
+    if not safe_path.startswith(os.path.abspath(current_app.config['INDEXED_ROOT_DIR']) + os.sep):
         print(f"Attempt to access file outside allowed directory: {safe_path}")
         abort(403) # Forbidden
 
@@ -281,16 +290,17 @@ def download_file(file_path=None):
 @app.route('/download_backup/<filename>')
 def download_backup(filename):
     """Serves a requested database backup file."""
+    backup_dir = current_app.config['BACKUP_DIR'] # Use config
     # Basic security: ensure filename doesn't contain path traversal
     if '..' in filename or filename.startswith('/'):
         abort(400) # Bad request
 
-    backup_file_path = os.path.join(BACKUP_DIR, filename)
+    backup_file_path = os.path.join(backup_dir, filename)
 
     # --- Security Check ---
     # Ensure the file is within the designated BACKUP_DIR
-    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(BACKUP_DIR)):
-         print(f"Attempt to access backup file outside allowed directory: {backup_file_path}")
+    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(backup_dir)):
+         logger.warning(f"Attempt to access backup file outside allowed directory: {backup_file_path}")
          abort(403) # Forbidden
 
     if not os.path.isfile(backup_file_path):
@@ -305,15 +315,16 @@ def download_backup(filename):
 @app.route('/download_code_backup/<filename>')
 def download_code_backup(filename):
     """Serves a requested commit-specific code backup (.zip) file."""
+    backup_dir = current_app.config['BACKUP_DIR'] # Use config
     # Basic security: ensure filename doesn't contain path traversal
     if '..' in filename or filename.startswith('/') or not filename.endswith('.zip'):
         abort(400) # Bad request
 
-    backup_file_path = os.path.join(BACKUP_DIR, filename)
+    backup_file_path = os.path.join(backup_dir, filename)
 
     # --- Security Check ---
     # Ensure the file is within the designated BACKUP_DIR
-    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(BACKUP_DIR)):
+    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(backup_dir)):
          logger.warning(f"Attempt to access code backup file outside allowed directory: {backup_file_path}")
          abort(403) # Forbidden
 
@@ -327,9 +338,52 @@ def download_code_backup(filename):
         logger.error(f"Error sending code backup file '{backup_file_path}': {e}")
         abort(500)
 
+@app.route('/restore_backup/<filename>', methods=['POST'])
+def restore_backup(filename):
+    """Restores the database from a selected backup file."""
+    backup_dir = current_app.config['BACKUP_DIR'] # Use config
+    live_db_path = current_app.config['DATABASE'] # Use config
+    
+    # Security: Prevent path traversal and ensure it's a .db file
+    if '..' in filename or filename.startswith('/') or not filename.endswith('.db'):
+        logger.error(f"Attempt to restore invalid file: {filename}")
+        flash("Invalid backup filename provided.", 'error')
+        abort(400) # Bad request
+
+    backup_file_path = os.path.join(backup_dir, filename)
+
+    # --- Security & Existence Checks ---
+    # Ensure the backup file is within the designated BACKUP_DIR
+    if not os.path.abspath(backup_file_path).startswith(os.path.abspath(backup_dir)):
+         logger.error(f"Attempt to restore file outside allowed directory: {backup_file_path}")
+         flash("Invalid backup file location.", 'error')
+         abort(403) # Forbidden
+
+    if not os.path.isfile(backup_file_path):
+        logger.error(f"Backup file not found for restore: {backup_file_path}")
+        flash(f"Backup file '{filename}' not found.", 'error')
+        abort(404) # Not Found
+        
+    # --- Perform Restore --- 
+    try:
+        # Important: Ensure any active DB connection is closed before overwriting?
+        # Flask usually handles connections per request, so it *should* be okay,
+        # but in a more complex app, explicit connection closing might be needed here.
+        logger.warning(f"Attempting to restore database from: {backup_file_path} to {live_db_path}")
+        shutil.copy2(backup_file_path, live_db_path) # copy2 preserves metadata
+        logger.info(f"Database successfully restored from {filename}.")
+        flash(f"Database successfully restored from '{filename}'.", 'success')
+    except Exception as e:
+        logger.error(f"Failed to restore database from '{filename}': {e}")
+        flash(f"Failed to restore database: {e}", 'error')
+        # Don't abort here, redirect back to history to show the error
+
+    return redirect(url_for('history'))
+
 @app.route('/history')
 def history():
     """Displays git commit history and lists available backups."""
+    backup_dir = current_app.config['BACKUP_DIR'] # Use config
     # Get Git log
     history_log = []
     try:
@@ -357,16 +411,16 @@ def history():
     tagged_db_backups = []
     tagged_code_backups = []
     try:
-        all_files = sorted(os.listdir(BACKUP_DIR), reverse=True) # Sort by name (descending)
+        all_files = sorted(os.listdir(backup_dir), reverse=True) # Use config path
         manual_db_backups = [f for f in all_files if f.startswith('file_index_') and f.endswith('.db')]
         commit_db_backups = [f for f in all_files if f.startswith('db_commit_') and f.endswith('.db')]
         commit_code_backups = [f for f in all_files if f.startswith('code_commit_') and f.endswith('.zip')]
         tagged_db_backups = [f for f in all_files if f.startswith('db_tag_') and f.endswith('.db')]
         tagged_code_backups = [f for f in all_files if f.startswith('code_tag_') and f.endswith('.zip')]
     except FileNotFoundError:
-        logger.warning(f"Backup directory '{BACKUP_DIR}' not found.")
+        logger.warning(f"Backup directory '{backup_dir}' not found.") # Use config path
     except Exception as e:
-        logger.error(f"Error listing backup directory '{BACKUP_DIR}': {e}")
+        logger.error(f"Error listing backup directory '{backup_dir}': {e}") # Use config path
 
     return render_template('history.html', 
                            history_log=history_log, 
@@ -381,7 +435,7 @@ def history():
 def browse(sub_path=''):
     """Displays directories and files for browsing."""
     # --- Security and Path Handling ---
-    base_dir = os.path.abspath(INDEXED_ROOT_DIR)
+    base_dir = os.path.abspath(current_app.config['INDEXED_ROOT_DIR'])
     # Prevent access above the base directory
     requested_path = os.path.abspath(os.path.join(base_dir, sub_path))
     
@@ -501,7 +555,7 @@ def download_package():
         'requirements.txt',
         'VERSION',
         '.gitignore',
-        DATABASE # Add the database file name
+        current_app.config['DATABASE'] # Add the database file name
     ]
     
     memory_file = io.BytesIO()
@@ -542,7 +596,7 @@ logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")
-    print("Ensure the database '{}' exists (run indexer.py first).".format(DATABASE))
+    print("Ensure the database '{}' exists (run indexer.py first).".format(current_app.config['DATABASE']))
     print("Access the application at http://127.0.0.1:5000")
     # Use debug=True only for development, not production
     app.run(debug=True, host='0.0.0.0') # Host 0.0.0.0 makes it accessible on network 
