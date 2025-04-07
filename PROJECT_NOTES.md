@@ -34,19 +34,22 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 *   Always add unit tests for new functionality.
 
-## Commit Steps
+## Commit & Versioning Workflow
 
-1.  **(If applicable)** Run relevant unit tests (`pytest -v`) to ensure no regressions.
-2.  Stage the changed files (`git add <file1> <file2> ...` or `git add .`).
-3.  Commit the changes with a descriptive message following conventional commit standards (`git commit -m "type: Short description"`). Examples:
-    *   `feat:` (new feature)
-    *   `fix:` (bug fix)
-    *   `test:` (adding/fixing tests)
-    *   `docs:` (documentation changes)
-    *   `refactor:` (code changes that neither fix a bug nor add a feature)
-    *   `style:` (code style changes - often handled by linters)
-4.  Observe the terminal output immediately after commit to verify the `post-commit` hook ran successfully and created the `db_commit_*` and `code_commit_*` backups.
-5.  **(Optional/Future)** Push the commit and any tags to the remote repository (`git push origin <branch> --tags`).
+1.  **Run Unit Tests:** Before committing functional changes, run `pytest -v`. Fix any failures.
+2.  **Stage Changes:** Stage the functionally complete changes (`git add .` or specific files).
+3.  **Commit Functional Changes:** Commit with a conventional commit message (`git commit -m "type: Description"`).
+4.  **Verify Hook:** Observe terminal output to ensure the post-commit hook created `db_commit_<hash>` and `code_commit_<hash>` backups successfully.
+5.  **(Manual) Decide Version Bump:** Determine if the committed changes warrant a version increment (patch, minor, major).
+6.  **(Manual) Update Version File & Changelog:** If bumping version:
+    *   Edit the `VERSION` file (e.g., increment `0.7.0` to `0.7.1`).
+    *   Add release notes to `CHANGELOG.md` detailing changes in the new version.
+7.  **(Conditional) Stage Version Files:** `git add VERSION CHANGELOG.md`
+8.  **(Conditional) Commit Version Update:** Commit the version bump (`git commit -m "chore: Bump version to x.y.z"`). Verify the hook runs again.
+9.  **(Conditional) Tag Version Commit:** Tag the *version commit* with the corresponding version number (`git tag vx.y.z`).
+10. **(Optional) Push:** Push commits and tags to remote (`git push origin <branch> --tags`).
+
+*Note: Backups are primarily named by commit hash. Tags link semantic versions (vX.Y.Z) to specific commits (and thus their hash-named backups) in the Git history.*
 
 ## Open Questions / Ideas
 
