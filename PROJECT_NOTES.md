@@ -33,6 +33,11 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
 *   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions).
 
+## Web Interface Notes
+
+*   **Navbar:** The top navigation bar items are dynamically generated based on the contents of `menu.md`. Styling is controlled by `static/css/style.css`. See `menu.md` for historical styling notes.
+*   **Goals Page:** Project goals are managed in `PROJECT_GOALS.md` and can be edited via the `/goals` page.
+
 ## Version History Page (`/history`)
 
 **Desired Structure:**
@@ -59,13 +64,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Design Notes
 
-### Top Navbar Styling Issue & Solution
-
-*   **Problem:** Applying global styles directly to common HTML elements like `<li>` (e.g., setting a `background` or `padding`) caused unexpected visual bugs in the top navigation bar. Specifically, the navbar links (`<a>` tags inside `<li>` tags) inherited or were affected by the general `<li>` styles, making them appear as boxes instead of plain text links, even when `.navbar a` styles were set correctly.
-*   **Solution:**
-    1.  **Avoid Global Styles on Generic Elements:** Do not apply backgrounds, borders, or significant padding directly to generic selectors like `li` if those elements are used in structurally different components (like navbars and content lists).
-    2.  **Use Specific Selectors for Content:** For styling list items within the main content area (e.g., backup lists, version lists), apply styles using a more specific selector. Add a class (e.g., `content-list`) to the parent `<ul>` and target the list items with `.content-list li`.
-    3.  **Explicitly Reset Component Styles:** For components like the navbar, explicitly define styles for its child elements (e.g., `.navbar li`) to reset any potentially inherited properties (like `padding`, `border`, `background`, `display`) to ensure they don't interfere with the intended appearance.
+*(Moved Navbar styling notes to menu.md)*
 
 ## Recent Fixes (2025-04-07)
 
