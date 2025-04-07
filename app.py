@@ -13,6 +13,12 @@ import re # For parsing git log
 import glob # For globbing file patterns
 import markdown # Import the markdown library
 
+# --- Logger Setup ---
+# Moved from bottom to ensure logger is available globally at startup
+logging.basicConfig(level=logging.DEBUG) # Use DEBUG for development
+logger = logging.getLogger(__name__)
+
+# --- Flask App Setup ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
 
@@ -149,8 +155,6 @@ def get_top_keywords(limit=50):
     
     # Add scaling factor for font size (optional, adjust as needed)
     if top_keywords:
-        # max_count = top_keywords[0][1]  # Removed F841
-        # min_count = top_keywords[-1][1]  # Removed F841
         # Apply log scaling to prevent huge differences, avoid log(0 or 1)
         log_min = 1 # To avoid log(0)
         log_max = math.log(top_keywords[0][1] + log_min) if top_keywords else 1 # Avoid error on empty
@@ -208,24 +212,56 @@ MENU_FILE = 'menu.md'
 def parse_menu_file(filepath):
     """Parses the menu.md file into a list of menu items."""
     menu_items = []
+    logger.debug(f"Attempting to parse menu file: {filepath}") # DEBUG
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('-') and ':' in line:
+            for i, line in enumerate(f):
+                original_line = line.strip() # Keep original for logging
+                logger.debug(f"Reading menu file line {i+1}: '{original_line}'") # DEBUG
+                
+                # Remove potential leading/trailing whitespace AFTER initial read for logging
+                line = original_line 
+                
+                # Ignore blank lines and comments
+                if not line or line.startswith('#'):
+                    continue
+
+                # Check format: starts with '-', contains ':', has text before ':'
+                if line.startswith('-') and ':' in line and line.find(':') > 1:
                     try:
-                        text, endpoint = line[1:].split(':', 1)
-                        menu_items.append({'text': text.strip(), 'endpoint': endpoint.strip()})
+                        # Remove leading '-' and split at the FIRST colon
+                        content = line[1:].strip()
+                        text, endpoint = content.split(':', 1)
+                        text = text.strip()
+                        endpoint = endpoint.strip()
+                        
+                        # Remove trailing comments from endpoint
+                        if '#' in endpoint:
+                            endpoint = endpoint.split('#', 1)[0].strip()
+                            
+                        # Final check if text and endpoint are non-empty after stripping
+                        if text and endpoint:
+                            item = {'text': text, 'endpoint': endpoint}
+                            menu_items.append(item)
+                            logger.debug(f"  -> Parsed item: {item}") # DEBUG
+                        else:
+                            logger.warning(f"Ignoring line with empty text or endpoint after parsing: '{original_line}'")
                     except ValueError:
-                        logger.warning(f"Could not parse menu line: {line}")
+                        # This shouldn't happen often with the checks above, but good to have
+                        logger.warning(f"Could not parse potential menu line: '{original_line}'")
+                else:
+                     # Use warning level for lines that look like they might be menu items but are malformed
+                     logger.warning(f"Ignoring line (doesn't match format ' - Text: endpoint'): '{original_line}'") # WARNING
     except FileNotFoundError:
         logger.error(f"Menu file not found: {filepath}. Returning empty menu.")
     except Exception as e:
         logger.error(f"Error reading menu file {filepath}: {e}. Returning empty menu.")
+    logger.debug(f"Finished parsing menu file. Items loaded: {menu_items}") # DEBUG
     return menu_items
 
 # Load menu at startup
 main_menu = parse_menu_file(MENU_FILE)
+logger.info(f"Main menu loaded at startup: {main_menu}") # INFO log for final structure
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -780,7 +816,7 @@ def update_goals():
         # Basic sanitization: replace null bytes
         safe_content = new_content.replace('\x00', '')
         with open(GOALS_FILE, 'w', encoding='utf-8') as f:
-            f.write(safe_content)
+             f.write(safe_content)
         flash(f'{GOALS_FILE} updated successfully.', 'success')
         logger.info(f"Updated {GOALS_FILE} via web interface.")
     except Exception as e:
@@ -790,10 +826,6 @@ def update_goals():
     return redirect(url_for('view_goals'))
 
 # --- End Project Goals Page ---
-
-# Add logger setup if not already present
-logging.basicConfig(level=logging.DEBUG) # Use DEBUG for development
-logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")

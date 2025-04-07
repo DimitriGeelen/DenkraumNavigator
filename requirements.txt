@@ -8,6 +8,10 @@ nltk
 sumy
 pytesseract
 Flask
+Flask-SQLAlchemy
+Flask-Migrate
+python-dotenv
+Markdown
 
 # Development/Linting Tools
 flake8
@@ -16,6 +20,7 @@ ruff
 # Testing Tools
 pytest
 pytest-flask
+pytest-mock # For mocking in tests
 
 # Versioning Helper
 semver 
