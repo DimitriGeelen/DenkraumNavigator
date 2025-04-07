@@ -5,7 +5,7 @@
 - Search: index
 - Browse: browse
 - History & Backups: history
-- Goals: show_goals
+- Goals: display_project_goals
 
 ## Navbar Styling Notes (From PROJECT_NOTES.md)
 
