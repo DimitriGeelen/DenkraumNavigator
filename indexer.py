@@ -430,17 +430,41 @@ def index_files(directory_path, db_conn, db_cursor):
                     extracted_text = extract_text_pptx(file_path)
                 elif file_type == 'PDF Document':
                     extracted_text = extract_text_pdf(file_path)
-                # --- Temporarily disable OCR to save memory ---
-                # elif file_type == 'Image':
-                #     extracted_text = extract_text_image(file_path) # OCR
+                # --- Enable OCR --- #
+                elif file_type == 'Image':
+                    if Image and pytesseract: # Check if libs are available
+                         extracted_text = extract_text_image(file_path) # OCR
+                    else:
+                         logging.warning("Image processing skipped: Pillow or pytesseract not available.")
                 elif file_type == 'Text':
                     extracted_text = extract_text_plain(file_path)
                 # Add more handlers here (e.g., 'Code', 'Archive' - maybe list contents?)
 
-                # --- Summarization & Keywords ---
-                if extracted_text:
+                # --- Summarization & Keywords (Including OCR results) ---
+                # First process non-image text
+                if extracted_text and file_type != 'Image':
                     file_data['summary'] = summarize_text(extracted_text)
                     file_data['keywords'] = extract_keywords(extracted_text)
+                
+                # Now handle image OCR results specifically
+                if file_type == 'Image' and extracted_text:
+                    ocr_summary_part = f"\n\n[OCR Text]: {extracted_text[:1000]}{'...' if len(extracted_text) > 1000 else ''}" # Append OCR text snippet
+                    # Initialize summary/keywords if None
+                    if file_data['summary'] is None: file_data['summary'] = ""
+                    if file_data['keywords'] is None: file_data['keywords'] = ""
+                    
+                    file_data['summary'] += ocr_summary_part
+                    
+                    ocr_keywords_str = extract_keywords(extracted_text)
+                    if ocr_keywords_str:
+                        # Combine existing and OCR keywords, removing duplicates
+                        existing_keywords = set(k.strip() for k in file_data['keywords'].split(',') if k.strip())
+                        ocr_keywords = set(k.strip() for k in ocr_keywords_str.split(',') if k.strip())
+                        combined_keywords = list(existing_keywords.union(ocr_keywords))
+                        file_data['keywords'] = ",".join(combined_keywords)
+                    
+                    logging.info(f"Added OCR text/keywords for {file_path}")
+                    
                 elif file_type not in ['Image', 'Other', 'Archive', 'Audio', 'Video', 'Code'] and extracted_text is None:
                     # Indicate if text *should* have been extracted but wasn't
                     file_data['processing_error'] = f"Failed to extract text ({file_type})"
