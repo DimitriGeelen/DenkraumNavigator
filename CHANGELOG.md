@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [1.2.0] - 2025-04-07
+
+### Fixed
+
+- Corrected filename patterns used for finding commit-based backups (`commit_<hash>.*`) in the `/history` page and the `/download_commit_package` route, ensuring backup download links appear and function correctly.
+
+### Added
+
+- Added debug logging to `get_commit_details` and `download_commit_package` to show glob patterns and results.
+
 ## [1.1.0] - 2025-04-07
 
 ### Added
