@@ -30,6 +30,11 @@ if [ -f "$VENV_PYTHON" ] && [ -f "$APP_SCRIPT" ]; then
     # Check if the process started (check exit code of nohup initiation)
     if [ $? -eq 0 ]; then
         echo "Server start command initiated successfully (running in background). Check $LOG_FILE for output/errors."
+        # Give the server a brief moment to write initial logs
+        sleep 0.5 
+        echo "\n--- Last 15 lines of $LOG_FILE ---"
+        tail -n 15 "$LOG_FILE"
+        echo "--- End of log tail ---"
     else
         echo "ERROR: Failed to initiate server start command." >&2
         exit 1
