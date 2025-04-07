@@ -73,8 +73,7 @@
             <h3>Keyword Cloud</h3>
             {% if top_keywords %}
                 {% for keyword in top_keywords %}
-                    <a href="{{ url_for('index', keywords=keyword.text) }}" title="{{ keyword.weight }} files"
-                       style="font-size: {{ '%.2f'|format(keyword.font_scale * 0.7 + 0.8) }}em; opacity: {{ '%.2f'|format(keyword.font_scale * 0.1 + 0.8) }};">
+                    <a href="{{ url_for('index', keywords=keyword.text) }}" title="{{ keyword.weight }} files">
                         {{ keyword.text }}
                     </a>
                 {% endfor %}
