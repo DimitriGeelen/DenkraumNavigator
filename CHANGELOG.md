@@ -1,6 +1,10 @@
 # Changelog
 
-## [2.0.0] - YYYY-MM-DD
+## [v2.3.0] - YYYY-MM-DD
+### Added
+- feat: Add Learnings back to main menu (d66d752)
+
+## [v2.2.0] - 2024-05-25
 
 ### Added
 - feat: Implement features and updates for major release (4cb387c)
