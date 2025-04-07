@@ -6,7 +6,7 @@ import zipfile
 import io
 import datetime # For timestamp in zip filename
 import shutil # Import shutil for file copying
-from flask import Flask, render_template, request, g, send_file, abort, flash, redirect, url_for, current_app # Add flash, redirect, url_for, current_app
+from flask import Flask, render_template, request, g, send_file, abort, flash, redirect, url_for, current_app, Response # Add flash, redirect, url_for, current_app
 from collections import Counter
 import math # For tag cloud scaling
 import logging
@@ -27,9 +27,9 @@ app = Flask(__name__)
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
 log_handler = RotatingFileHandler('flask_explicit.log', maxBytes=1000000, backupCount=3)
 log_handler.setFormatter(log_formatter)
-log_handler.setLevel(logging.INFO) # Set desired level here
+log_handler.setLevel(logging.DEBUG) # Set desired level here (Changed to DEBUG)
 app.logger.addHandler(log_handler)
-app.logger.setLevel(logging.INFO) # Also set app logger level
+app.logger.setLevel(logging.DEBUG) # Also set app logger level (Changed to DEBUG)
 
 # Remove default Flask handler if it exists (optional, but cleaner)
 if len(app.logger.handlers) > 1:
@@ -195,8 +195,6 @@ def search_database(filename=None, years=None, file_types=None, keywords=None):
     # Only execute query if there are actual conditions beyond WHERE 1=1
     if conditions:
         sql_query = f"{base_query} AND {' AND '.join(conditions)} ORDER BY last_modified DESC" # Order by date
-        # print(f"DEBUG SQL: {sql_query}") # Uncomment for debugging
-        # print(f"DEBUG PARAMS: {params}")
         try:
              results = query_db(sql_query, params)
              return results
@@ -306,21 +304,19 @@ def index():
     if request.method == 'POST':
         # Get data from submitted form
         filename = request.form.get('filename')
-        # Use getlist for year multi-select
-        selected_years = request.form.getlist('year') 
-        # Use getlist for type multi-select
-        selected_types = request.form.getlist('type') 
+        # Use getlist for year/type multi-select AND filter out empty strings
+        selected_years = [y for y in request.form.getlist('year') if y] 
+        selected_types = [t for t in request.form.getlist('type') if t] 
         keywords = request.form.get('keywords')
         # Store list of years/types in search_terms for refilling form
         search_terms = {'filename': filename, 'year': selected_years, 'type': selected_types, 'keywords': keywords}
     else: # request.method == 'GET'
         # Get data from URL parameters (e.g., from tag cloud links)
         filename = request.args.get('filename')
-        # GET requests typically won't have multiple years/types from links
         year_single = request.args.get('year') 
         file_type_single = request.args.get('type') 
         keywords = request.args.get('keywords')
-        # Populate search_terms to refill the form fields if parameters are in URL
+        # Filter out potential empty strings here too for consistency
         selected_years = [year_single] if year_single else []
         selected_types = [file_type_single] if file_type_single else []
         search_terms = {'filename': filename, 'year': selected_years, 'type': selected_types, 'keywords': keywords}
@@ -330,8 +326,6 @@ def index():
     if any(st for key, st in search_terms.items() if st): # Check for non-empty values/lists
         results = search_database(filename=filename, years=selected_years, file_types=selected_types, keywords=keywords)
     else:
-         # Optional: Add a flash message telling the user to enter search terms if method was POST
-         # if request.method == 'POST': flash("Please enter search terms.")
          pass
 
     # Get distinct file types for the dropdown
@@ -900,6 +894,108 @@ def update_learnings():
     return redirect(url_for('display_learnings'))
 
 # --- End Learnings Page ---
+
+# --- Route to Download Change Notes ---
+@app.route('/download_change_notes/<commit_hash>')
+def download_change_notes(commit_hash):
+    """Returns the commit message for a given hash as a text file download."""
+    # Basic validation for commit hash (simple check for hex characters and length)
+    if not all(c in '0123456789abcdef' for c in commit_hash) or not (7 <= len(commit_hash) <= 40):
+        logger.warning(f"Invalid commit hash requested for download: {commit_hash}")
+        abort(400, description="Invalid commit hash format.")
+
+    try:
+        # Use git log to get the raw commit body (%B)
+        # -n 1: Limit to one commit
+        result = subprocess.run(
+            ['git', 'log', '-n', '1', '--pretty=format:%B', commit_hash],
+            capture_output=True,
+            text=True,
+            check=True,
+            encoding='utf-8' # Ensure consistent encoding
+        )
+        commit_message = result.stdout
+
+        # Create a response object for download
+        response = Response(
+            commit_message,
+            mimetype='text/plain',
+            headers={ "Content-Disposition": f"attachment; filename=change_notes_{commit_hash[:10]}.txt" }
+        )
+        logger.info(f"Served change notes for commit: {commit_hash}")
+        return response
+
+    except subprocess.CalledProcessError as e:
+        # Handle case where commit hash doesn't exist or git command fails
+        logger.error(f"Git command failed for commit {commit_hash}: {e}")
+        logger.error(f"Git stderr: {e.stderr}")
+        abort(404, description=f"Commit '{commit_hash}' not found or git error.")
+    except FileNotFoundError:
+        logger.error("Git command not found. Is Git installed and in PATH?")
+        abort(500, description="Git command not found on server.")
+    except Exception as e:
+        logger.error(f"Error generating change notes for commit {commit_hash}: {e}")
+        abort(500, description="Server error generating change notes.")
+# --- End Change Notes Route ---
+
+# --- Multi-MD File Editor Page ---
+
+@app.route('/md_files')
+def display_md_files():
+    """Displays all root .md files for editing."""
+    md_files_data = []
+    try:
+        # Find all .md files in the project's root directory
+        # Make sure this runs from the project root
+        md_filenames = sorted(glob.glob('*.md')) 
+        
+        for filename in md_filenames:
+            try:
+                with open(filename, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                md_files_data.append({'filename': filename, 'content': content})
+            except Exception as e:
+                logger.error(f"Error reading {filename}: {e}")
+                md_files_data.append({'filename': filename, 'content': f"# Error reading file: {e}", 'error': True})
+                
+    except Exception as e:
+        logger.error(f"Error finding .md files: {e}")
+        flash(f"Error finding .md files: {e}", "error")
+        # Optionally return an error template or redirect
+
+    return render_template('md_files.html', md_files=md_files_data)
+
+@app.route('/update_md_file', methods=['POST'])
+def update_md_file():
+    """Receives POST request to update a specific .md file."""
+    filename_to_update = request.form.get('filename')
+    new_content = request.form.get('md_content')
+
+    if not filename_to_update or new_content is None:
+        flash('Error: Missing filename or content.', 'error')
+        return redirect(url_for('display_md_files'))
+
+    try:
+        # Security Check: Ensure the filename is a valid .md file in the root
+        valid_md_files = glob.glob('*.md')
+        if filename_to_update not in valid_md_files:
+            flash(f'Error: Invalid or disallowed filename: {filename_to_update}', 'error')
+            logger.warning(f"Attempt to update invalid/disallowed file: {filename_to_update}")
+            return redirect(url_for('display_md_files'))
+
+        # Basic sanitization: replace null bytes
+        safe_content = new_content.replace('\x00', '')
+        with open(filename_to_update, 'w', encoding='utf-8') as f:
+            f.write(safe_content)
+        flash(f'{filename_to_update} updated successfully.', 'success')
+        logger.info(f"Updated {filename_to_update} via web interface.")
+    except Exception as e:
+        flash(f'Error updating {filename_to_update}: {e}', 'error')
+        logger.error(f"Error writing {filename_to_update}: {e}")
+
+    return redirect(url_for('display_md_files'))
+
+# --- End Multi-MD File Editor Page ---
 
 if __name__ == '__main__':
     print("Starting Flask web server...")
