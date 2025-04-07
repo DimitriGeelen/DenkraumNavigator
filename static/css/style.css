@@ -167,4 +167,202 @@ code {
 pre code {
     padding: 0;
     background-color: transparent;
+}
+
+/* ========================================= */
+/* Button Link Styles (Moved from history.html) */
+/* ========================================= */
+
+.btn-link {
+    display: inline-block;
+    padding: 4px 8px; /* Base padding, can be overridden */
+    font-size: 0.9em; /* Base font size */
+    font-weight: 500;
+    color: #fff !important; /* Use important to override base 'a' color if needed */
+    background-color: #6c757d; /* Default grey */
+    border: 1px solid #6c757d;
+    border-radius: 4px;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    text-decoration: none !important; /* Ensure no underline */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    margin: 2px; /* Base margin */
+}
+.btn-link:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: #fff !important;
+    text-decoration: none !important;
+}
+
+/* --- Variations --- */
+
+/* Download buttons (DB, Code, Package) - Cyan */
+.btn-link-download-db,
+.btn-link-download-code,
+.btn-link-download-package {
+     background-color: #17a2b8;
+     border-color: #17a2b8;
+}
+.btn-link-download-db:hover,
+.btn-link-download-code:hover,
+.btn-link-download-package:hover {
+     background-color: #138496;
+     border-color: #117a8b;
+}
+
+/* Restore button - Red */
+.btn-link-restore {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+.btn-link-restore:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Reset button - Green */
+.btn-link-reset {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+.btn-link-reset:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* --- Contextual Adjustments --- */
+
+/* Styling for list items that contain action buttons */
+.content-list li {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 6px;
+    font-family: monospace; /* Specific to history page lists */
+    font-size: 0.9em; /* Specific to history page lists */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Container for buttons within a list item */
+.content-list li div.actions {
+    white-space: nowrap;
+    flex-shrink: 0; /* Prevent buttons shrinking */
+}
+
+/* Adjust button size/margin when inside a .content-list li */
+.content-list li .btn-link {
+     padding: 3px 6px;
+     font-size: 0.85em;
+     margin: 0 0 0 5px; /* Keep only left margin for spacing */
+}
+
+/* Style for disabled-like buttons (e.g., package unavailable) */
+.btn-link-disabled {
+    display: inline-block;
+    padding: 3px 6px;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #6c757d;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    vertical-align: middle;
+    cursor: not-allowed;
+    margin: 0 0 0 5px;
+}
+
+/* ========================================= */
+/* Search Result Styles                   */
+/* ========================================= */
+
+.search-result-container {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.result-icon {
+    flex: 0 0 50px; /* Fixed width for icon container */
+    text-align: center;
+    margin-right: 15px;
+    color: #6c757d; /* Default icon color */
+}
+
+/* Specific icon colors */
+.result-icon .fa-file-pdf { color: #dc3545; } /* Red */
+.result-icon .fa-file-word { color: #0d6efd; } /* Blue */
+.result-icon .fa-file-excel { color: #198754; } /* Green */
+.result-icon .fa-file-powerpoint { color: #fd7e14; } /* Orange */
+.result-icon .fa-file-image { color: #6f42c1; } /* Purple */
+.result-icon .fa-file-archive { color: #ffc107; } /* Yellow */
+.result-icon .fa-file-alt { color: #adb5bd; } /* Grey */
+.result-icon .fa-file-code { color: #0dcaf0; } /* Cyan */
+
+
+.result-details {
+    flex: 1 1 auto; /* Allow details to grow and shrink */
+    margin-right: 15px;
+}
+
+.result-details p {
+    margin: 0 0 8px 0; /* Adjust spacing between paragraphs */
+    line-height: 1.4;
+}
+
+.result-details p strong {
+    color: #343a40;
+}
+
+.result-details small { /* Style for summary */
+    color: #6c757d;
+    display: block; /* Ensure summary takes its own line if long */
+}
+
+.result-actions {
+    flex: 0 0 auto; /* Don't grow or shrink, take needed space */
+    text-align: right;
+}
+
+.result-actions .btn-link {
+    /* Optional: Adjust button size/margin specifically for search results */
+     padding: 6px 12px; 
+     font-size: 0.9em;
+     margin: 0; /* Reset margin if needed */
+}
+
+.result-actions .btn-link i {
+    margin-right: 5px; /* Space between icon and text */
+}
+
+/* Other general styles if needed */
+.results p:first-of-type { /* e.g., "Found X matching files." */
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+.no-results {
+    color: #6c757d;
+    margin-top: 20px;
+}
+
+/* --- Thumbnail Specific Styling --- */
+.result-thumbnail {
+    max-width: 100px;  /* Corresponds to THUMBNAIL_SIZE[0] */
+    max-height: 100px; /* Corresponds to THUMBNAIL_SIZE[1] */
+    width: auto;
+    height: auto;
+    border: 1px solid #ccc;
+    object-fit: cover; /* Scale while maintaining aspect ratio */
 } 

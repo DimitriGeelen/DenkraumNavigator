@@ -7,7 +7,7 @@ PyMuPDF # For reading PDFs, often more robust than PyPDF2
 nltk
 sumy
 pytesseract
-Flask
+Flask>=2.0
 Flask-SQLAlchemy
 Flask-Migrate
 python-dotenv

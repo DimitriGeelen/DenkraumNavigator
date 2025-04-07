@@ -15,6 +15,9 @@ import glob # For globbing file patterns
 import markdown # Import the markdown library
 from logging.handlers import RotatingFileHandler # Import handler
 
+# --- Add Pillow import ---
+from PIL import Image, UnidentifiedImageError
+
 # --- Logger Setup ---
 # Moved from bottom to ensure logger is available globally at startup
 # logging.basicConfig(level=logging.INFO) # Use INFO to reduce verbosity
@@ -41,6 +44,8 @@ app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
 app.config.setdefault('DATABASE', 'file_index.db')
 app.config.setdefault('INDEXED_ROOT_DIR', '/dol-data-archive2') # Ensure this default is correct
 app.config.setdefault('BACKUP_DIR', 'backups') # Default backup dir
+app.config.setdefault('THUMBNAIL_CACHE_DIR', 'thumbnail_cache') # Thumbnail cache
+app.config.setdefault('THUMBNAIL_SIZE', (100, 100)) # Thumbnail size (width, height)
 
 # --- Menu Parsing (Restore original global load) ---
 MENU_FILE = 'menu.md'
@@ -996,6 +1001,59 @@ def update_md_file():
     return redirect(url_for('display_md_files'))
 
 # --- End Multi-MD File Editor Page ---
+
+# --- Thumbnail Generation Route --- 
+@app.route('/thumbnail/<path:file_path>')
+def serve_thumbnail(file_path):
+    """Generates (if needed) and serves a thumbnail for an image."""
+    
+    # --- Security Check (Similar to download_file) ---
+    safe_original_path = os.path.abspath(os.path.join("/", file_path))
+    if not safe_original_path.startswith(os.path.abspath(current_app.config['INDEXED_ROOT_DIR']) + os.sep):
+        logger.warning(f"Attempt to access file outside allowed directory for thumbnail: {safe_original_path}")
+        abort(403)
+
+    if not os.path.isfile(safe_original_path):
+        logger.warning(f"Original image not found for thumbnail: {safe_original_path}")
+        abort(404)
+        
+    # --- Thumbnail Path --- 
+    cache_dir = current_app.config['THUMBNAIL_CACHE_DIR']
+    # Create a safe filename for the cache (replace slashes, etc.)
+    # Using the relative path helps avoid collisions from different base dirs if config changes
+    relative_path = os.path.relpath(safe_original_path, current_app.config['INDEXED_ROOT_DIR'])
+    cache_filename_base = re.sub(r'[^a-zA-Z0-9_.-]', '_', relative_path)
+    # Add a suffix to distinguish it as a thumbnail
+    cache_filename = f"{cache_filename_base}_thumb.jpg" # Save as JPG for consistency
+    thumbnail_path = os.path.join(cache_dir, cache_filename)
+
+    # --- Generate if needed --- 
+    if not os.path.exists(thumbnail_path):
+        os.makedirs(cache_dir, exist_ok=True) # Ensure cache dir exists
+        try:
+            logger.info(f"Generating thumbnail for {safe_original_path} at {thumbnail_path}")
+            img = Image.open(safe_original_path)
+            # Handle potential transparency (convert to RGB before saving as JPG)
+            if img.mode in ("RGBA", "P"): 
+                img = img.convert("RGB")
+            img.thumbnail(current_app.config['THUMBNAIL_SIZE'])
+            img.save(thumbnail_path, "JPEG") # Save as JPEG
+        except UnidentifiedImageError:
+            logger.error(f"Cannot identify image file (possibly unsupported format): {safe_original_path}")
+            # Optionally, serve a placeholder 'cannot display' image here
+            abort(404) # Treat as not found for simplicity now
+        except Exception as e:
+            logger.error(f"Error generating thumbnail for {safe_original_path}: {e}")
+            # Log the error but maybe still abort 500? Or serve placeholder?
+            abort(500)
+            
+    # --- Serve Thumbnail --- 
+    try:
+        return send_file(thumbnail_path, mimetype='image/jpeg')
+    except Exception as e:
+        logger.error(f"Error sending thumbnail file '{thumbnail_path}': {e}")
+        abort(500)
+# --- End Thumbnail Route --- 
 
 if __name__ == '__main__':
     print("Starting Flask web server...")

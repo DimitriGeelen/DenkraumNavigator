@@ -4,17 +4,6 @@
 
 {% block content %}
 {# Remove redundant nav block, inherit from base.html #}
-{# <nav class="navbar">
-    <ul>
-        {% if g.main_menu %}
-            {% for item in g.main_menu %}
-                <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
-            {% endfor %}
-        {% else %}
-            <li><a href="/">Search</a></li> {# Fallback if menu fails #}
-        {% endif %}
-    </ul>
-</nav> #}
 
 <div class="container">
     <h1>DenkraumNavigator Archive Search</h1>
@@ -88,26 +77,56 @@
         {% if results %}
             <p>Found {{ results|length }} matching files.</p>
             {% for result in results %}
-            <div class="result-item">
-                <p><strong>Path:</strong> {{ result.path }} 
-                   <span>
-                       <a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" 
-                          title="Download {{ result.filename }}" 
-                          class="btn-link btn-link-download">
-                           Download
-                       </a>
-                   </span>
-                </p>
-                <p><strong>Type:</strong> {{ result.category_type }}</p>
-                <p><strong>Year:</strong> {{ result.category_year }}</p>
-                <p><strong>Extract / Summary:</strong> 
-                    {% if result.summary %}
-                        {{ result.summary[:1000] + ('...' if result.summary|length > 1000 else '') }}
-                    {% else %}
-                        N/A
+            <div class="search-result-container">
+                <div class="result-icon">
+                    {# Match against full category type names from DB #}
+                    {% if result.category_type == 'Image' %}
+                        {# Show thumbnail instead of icon for images #}
+                        <img src="{{ url_for('serve_thumbnail', file_path=result.path.lstrip('/')) }}" 
+                             alt="Thumbnail for {{ result.filename }}" 
+                             class="result-thumbnail">
+                    {% elif result.category_type == 'PDF Document' %}
+                        <i class="fas fa-file-pdf fa-2x" title="PDF Document"></i>
+                    {% elif result.category_type == 'Word Document' %}
+                        <i class="fas fa-file-word fa-2x" title="Word Document"></i>
+                    {% elif result.category_type == 'Excel Spreadsheet' %}
+                        <i class="fas fa-file-excel fa-2x" title="Excel Spreadsheet"></i>
+                    {% elif result.category_type == 'PowerPoint Presentation' %}
+                        <i class="fas fa-file-powerpoint fa-2x" title="PowerPoint Presentation"></i>
+                    {% elif result.category_type == 'Archive' %}
+                        <i class="fas fa-file-archive fa-2x" title="Archive File"></i>
+                    {% elif result.category_type == 'Text' %}
+                        <i class="fas fa-file-alt fa-2x" title="Text Document"></i>
+                     {% elif result.category_type == 'Code' %}
+                        <i class="fas fa-file-code fa-2x" title="Code File"></i>
+                    {% elif result.category_type == 'Audio' %}
+                         <i class="fas fa-file-audio fa-2x" title="Audio File"></i>
+                    {% elif result.category_type == 'Video' %}
+                         <i class="fas fa-file-video fa-2x" title="Video File"></i>
+                    {# Add other specific types if needed #}
+                    {% else %} {# Default for 'Other' or unknown #}
+                        <i class="fas fa-file fa-2x" title="{{ result.category_type or 'Other File Type' }}"></i>
                     {% endif %}
-                </p>
-                <p><strong>Keywords:</strong> {{ result.keywords or 'N/A' }}</p>
+                </div>
+                <div class="result-details">
+                    <p><strong>Path:</strong> {{ result.path }}</p>
+                    <p><strong>Type:</strong> {{ result.category_type }} | <strong>Year:</strong> {{ result.category_year }}</p>
+                    <p><strong>Keywords:</strong> {{ result.keywords or 'N/A' }}</p>
+                    <p><strong>Extract / Summary:</strong> 
+                        {% if result.summary %}
+                            <small>{{ result.summary[:300] + ('...' if result.summary|length > 300 else '') }}</small>
+                        {% else %}
+                            <small>N/A</small>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="result-actions">
+                    <a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" 
+                        title="Download {{ result.filename }}" 
+                        class="btn-link btn-link-download-db">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
             </div>
             {% endfor %}
         {% elif request.method == 'POST' %}
