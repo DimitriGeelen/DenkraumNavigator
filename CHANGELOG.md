@@ -1,3 +1,43 @@
+# Changelog
+
+## [2.0.0] - YYYY-MM-DD
+
+### Added
+- feat: Implement features and updates for major release (4cb387c)
+- feat: Enhance restart script to tail logs (5053799)
+- feat: Add basic CSS styling and link stylesheet (a523fb4)
+- feat: Add editable project goals page (/goals) (e99dbfa)
+- feat: Add version_bumper.py script to automate versioning (54ee5c9)
+
+### Changed
+- refactor: Rename goals endpoint again to display_project_goals (30f15d6)
+- refactor: Rename goals endpoint to show_goals (a35b0a8)
+- refactor: Dynamically generate navbar from menu.md (36876e8)
+
+### Fixed
+- fix: Correct menu parsing logic and add unit tests (c461746)
+
+### Reverted
+- revert: Revert attempt to generate menu URLs in before_request (e58fdd2)
+
+### Other (Docs, Chore, Test)
+- docs: Move navbar notes to menu.md and update refs (4a33ad7)
+- docs: Refactor commit/versioning workflow into separate file (9192cae)
+- docs: Minor update to project notes for testing (f7e95e2)
+- chore: Bump version to 1.2.0 (9d98aff)
+- chore: Test commit for filename verification (7cecd16)
+- chore: Bump version to 1.1.0 (e8023fe)
+- test: Skip flaky integration test and fix restore test cleanup (0bcac36)
+- test: Create commit to verify download link on history page (a18cfe1)
+- test: Create commit to verify download link on history page (23c0bf9)
+- test: Create commit to verify download link on history page (657e211)
+- test: Create commit to verify download link on history page (e2e2702)
+- test: Create commit to verify download link on history page (b7f24e1)
+- test: Create commit to verify download link on history page (f709ffe)
+- test: Create commit to verify download link on history page (41030fc)
+- test: Create commit to verify download link on history page (6a96689)
+- test: Create commit to verify download link on history page (bb7a1c8)
+
 ## [Unreleased]
 
 ## [1.2.0] - 2025-04-07
