@@ -78,7 +78,9 @@ def before_request():
     os.makedirs(backup_dir, exist_ok=True)
     g.DATABASE = current_app.config['DATABASE']
     g.BACKUP_DIR = current_app.config['BACKUP_DIR']
-    # Remove g.main_menu generation
+    # Add main_menu to the request context g
+    g.main_menu = main_menu 
+    # Remove g.main_menu generation (this comment seems outdated now)
 
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
@@ -180,22 +182,39 @@ def search_database(filename=None, years=None, file_types=None, keywords=None):
         return []
 
 def get_top_keywords(limit=50):
-    """Fetches all keywords from the DB and returns the most frequent ones."""
-    all_keywords_str = query_db("SELECT keywords FROM files WHERE keywords IS NOT NULL AND keywords != ''")
-    print(f"DEBUG [get_top_keywords]: Found {len(all_keywords_str)} rows with keywords.") # Debug
-    
+    """Fetches keywords row by row and returns the most frequent ones."""
+    logger.debug("[get_top_keywords] Fetching keywords row by row...")
     keyword_counts = Counter()
-    for i, row in enumerate(all_keywords_str):
-        # Keywords are stored comma-separated
-        if row['keywords']:
-            keywords = row['keywords'].split(',')
-            # if i < 5: print(f"DEBUG [get_top_keywords]: Row {i} keywords: {keywords}") # Debug first 5 rows
-            keyword_counts.update(kw.strip() for kw in keywords if kw.strip()) # Count non-empty keywords
-        
-    # Get the most common keywords and their counts
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT keywords FROM files WHERE keywords IS NOT NULL AND keywords != ''")
+        # Fetch and process row by row to reduce memory load
+        row_count = 0
+        while True:
+            row = cur.fetchone() # Fetch one row
+            if row is None:
+                break # No more rows
+            row_count += 1
+            if row['keywords']:
+                keywords = row['keywords'].split(',')
+                keyword_counts.update(kw.strip() for kw in keywords if kw.strip())
+            # Optional: Add logging every N rows to see progress
+            # if row_count % 1000 == 0:
+            #     logger.debug(f"[get_top_keywords] Processed {row_count} rows...")
+
+        logger.debug(f"[get_top_keywords] Finished processing {row_count} rows.")
+
+    except sqlite3.Error as e:
+        logger.error(f"[get_top_keywords] Database error: {e}")
+        return [] # Return empty on error
+    finally:
+        cur.close()
+        # Don't close the connection here, let teardown handle it
+
     top_keywords = keyword_counts.most_common(limit)
-    print(f"DEBUG [get_top_keywords]: Top {limit} raw keyword counts (first 5): {top_keywords[:5]}") # Debug
-    
+    logger.debug(f"[get_top_keywords] Top {limit} raw keyword counts (first 5): {top_keywords[:5]}")
+
     # Add scaling factor for font size (optional, adjust as needed)
     if top_keywords:
         # Apply log scaling to prevent huge differences, avoid log(0 or 1)
@@ -293,20 +312,19 @@ def index():
     distinct_types = get_distinct_file_types()
     # Get distinct years for the dropdown
     distinct_years = get_distinct_years()
-    # Always get top keywords for the tag cloud
-    top_keywords = get_top_keywords(limit=50) # Get top 50 keywords
-    print(f"DEBUG: Top Keywords Data (first 5): {top_keywords[:5]}") # Add this debug print
+    # Get top keywords for the tag cloud (this might be slow for large datasets)
+    top_keywords = get_top_keywords()
+    # print(f"DEBUG: Top Keywords Data (first 5): {top_keywords[:5]}") # Add this debug print
 
     # *** ADD LOGGING HERE ***
     logger.info(f"[Route: /] Value of main_menu being passed to template: {g.main_menu}")
 
     # On GET or after POST, render the template with results and previous terms
-    return render_template('index.html', results=results, 
-                           search_terms=search_terms, 
+    return render_template('index.html', results=results,
+                           search_terms=search_terms,
                            top_keywords=top_keywords,
                            distinct_types=distinct_types,
-                           distinct_years=distinct_years,
-                           menu=g.main_menu)
+                           distinct_years=distinct_years)
 
 @app.route('/download/') # Note the trailing slash
 @app.route('/download/<path:file_path>')
@@ -608,8 +626,7 @@ def history():
     return render_template('history.html', 
                            tag_details=tag_details,
                            commit_details=commit_details, # Pass commit details
-                           manual_db_backups=manual_db_backups,
-                           menu=g.main_menu)
+                           manual_db_backups=manual_db_backups)
                            # Remove old backup lists
                            # commit_db_backups=commit_db_backups,
                            # commit_code_backups=commit_code_backups)
@@ -679,8 +696,7 @@ def browse(sub_path=''):
                            current_path=sub_path or '/', 
                            breadcrumbs=breadcrumbs,
                            directories=dirs, 
-                           files=files,
-                           menu=g.main_menu)
+                           files=files)
 
 @app.route('/download_code')
 def download_code():

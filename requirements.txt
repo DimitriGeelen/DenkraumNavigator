@@ -12,6 +12,7 @@ Flask-SQLAlchemy
 Flask-Migrate
 python-dotenv
 Markdown
+gunicorn
 
 # Development/Linting Tools
 flake8

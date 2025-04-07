@@ -23,7 +23,14 @@ instance/
 .flask_cache/
 
 # Database Backups
-backups/ /backups/
+backups/
+
+# Test files and templates
+test_*.py
+tests/__init__.py
+*_template.html
+*corrected.sh
+restart_test*.sh
 
 # Flask server log
 /flask_server.log

@@ -72,3 +72,11 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 # Another test line for commit verification.
 # Test line for minor commit after fixing backup links.
+
+## Development Rules
+
+- When I say lets try to solve in test, we not not switch back to main until i say so
+
+## Open Issues / Assumptions
+
+- **Navbar Rendering (Goals link):** The 'Goals' link sometimes fails to render in the main application (port 5000), showing only 3 menu items. Extensive testing on a minimal server (port 5001) confirmed the menu data, Jinja loop logic, CSS, and `url_for` calls are correct. The main app server also shows frequent 'Killed' messages in logs when run with `debug=True`. **Assumption:** The main app is likely crashing during template rendering (specifically during the loop for the 4th item) due to resource exhaustion (memory/CPU), preventing the final item from being rendered.

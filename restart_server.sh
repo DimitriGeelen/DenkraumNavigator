@@ -1,48 +1,62 @@
 #!/bin/bash
 
-# Reliable Server Restart Script
+# Reliable Server Restart Script (Using Gunicorn)
 
 # Find the directory where the script is located (should be project root)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR" # Assuming script is in project root
 
-# Define paths
-VENV_PYTHON="$PROJECT_ROOT/.venv/bin/python"
-APP_SCRIPT="$PROJECT_ROOT/app.py"
-LOG_FILE="$PROJECT_ROOT/flask_server.log" # Log file for nohup
+# Define paths & Settings
+VENV_DIR="$PROJECT_ROOT/.venv"
+GUNICORN="$VENV_DIR/bin/gunicorn"
+APP_MODULE="app:app" # Gunicorn format: module_name:flask_app_instance
+LOG_FILE="$PROJECT_ROOT/flask_server.log" # Log file for gunicorn
+BIND_ADDR="0.0.0.0:5000"
+WORKERS=2 # Number of worker processes
 
-echo "Executing reliable server restart procedure..."
+echo "Executing reliable server restart procedure (using Gunicorn)..."
 
-# 1. Kill existing server process
-echo "Step 1: Stopping existing 'python app.py' processes..."
-# Use the full path to app.py in pkill pattern for more specificity
-pkill -9 -f "$VENV_PYTHON $APP_SCRIPT" || echo "No existing process found or pkill failed (continuing)."
+# 1. Kill whatever process is using port 5000
+echo "Step 1: Stopping process using TCP port 5000..."
+fuser -k -n tcp 5000 || echo "No process found on port 5000 or fuser failed (continuing)."
 
 # Wait a moment for the port to potentially free up
-sleep 1
+sleep 2 # Increased sleep time slightly
 
-# 2. Start new server process
-echo "Step 2: Starting new server process in background..."
-if [ -f "$VENV_PYTHON" ] && [ -f "$APP_SCRIPT" ]; then
-    # Use nohup to run independently of the terminal, redirect stdout/stderr
-    # The '&' runs it in the background.
-    nohup "$VENV_PYTHON" "$APP_SCRIPT" >> "$LOG_FILE" 2>&1 &
+# 2. Start new Gunicorn server process
+echo "Step 2: Starting new Gunicorn server process in background..."
+if [ -f "$GUNICORN" ]; then
+    # Activate venv (gunicorn might need it to find app and dependencies)
+    source "$VENV_DIR/bin/activate"
+    
+    # Use nohup for backgrounding + redirect stdout/stderr to log file
+    # Gunicorn options:
+    # --bind: Address and port to listen on
+    # --workers: Number of worker processes
+    # --log-level: Logging level (e.g., info, debug)
+    # --access-logfile / --error-logfile: Specify log files (using >> $LOG_FILE 2>&1 for simplicity here)
+    # --daemon: Run in the background (Alternative to nohup &)
+    nohup "$GUNICORN" --bind "$BIND_ADDR" --workers "$WORKERS" --log-level debug "$APP_MODULE" >> "$LOG_FILE" 2>&1 &
+    
+    # Deactivate venv if needed, though background process might inherit it
+    # deactivate 
+
     # Check if the process started (check exit code of nohup initiation)
     if [ $? -eq 0 ]; then
-        echo "Server start command initiated successfully (running in background). Check $LOG_FILE for output/errors."
+        echo "Gunicorn server start command initiated successfully (running in background). Check $LOG_FILE for output/errors."
         # Give the server a brief moment to write initial logs
-        sleep 0.5 
-        echo "\n--- Last 15 lines of $LOG_FILE ---"
+        sleep 3 
+        echo "\n--------------------------- Last 15 lines of $LOG_FILE ---------------------------"
         tail -n 15 "$LOG_FILE"
-        echo "--- End of log tail ---"
+        echo "--------------------------- End of log tail ---------------------------"
     else
-        echo "ERROR: Failed to initiate server start command." >&2
+        echo "ERROR: Failed to initiate Gunicorn server start command." >&2
         exit 1
     fi
 else
-    echo "ERROR: Cannot find venv Python ($VENV_PYTHON) or app script ($APP_SCRIPT)." >&2
+    echo "ERROR: Cannot find Gunicorn executable ($GUNICORN). Is it installed in the venv?" >&2
     exit 1
 fi
 
-echo "Restart procedure initiated."
+echo "Gunicorn restart procedure initiated."
 exit 0 

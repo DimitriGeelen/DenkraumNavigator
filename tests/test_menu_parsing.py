@@ -16,7 +16,7 @@ VALID_MENU_CONTENT = """
 - Search: index
 - Browse: browse
 - History & Backups: history
-- Goals: view_goals
+- Goals: display_project_goals
 """
 
 # Menu content with comments and blank lines
@@ -45,7 +45,7 @@ EXPECTED_VALID_MENU = [
     {'text': 'Search', 'endpoint': 'index'},
     {'text': 'Browse', 'endpoint': 'browse'},
     {'text': 'History & Backups', 'endpoint': 'history'},
-    {'text': 'Goals', 'endpoint': 'view_goals'}
+    {'text': 'Goals', 'endpoint': 'display_project_goals'}
 ]
 
 # Expected result for MIXED_MENU_CONTENT

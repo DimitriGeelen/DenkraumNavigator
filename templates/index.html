@@ -33,7 +33,7 @@
         .navbar a {
             color: #f8f9fa; /* Light text */
             text-decoration: none;
-            
+            padding: 8px 15px;
             border-radius: 4px;
             transition: background-color 0.2s ease;
         }
@@ -323,9 +323,14 @@
 <body>
     <nav class="navbar">
         <ul>
-            <li><a href="/">Search</a></li>
-            <li><a href="/browse/">Browse Archive</a></li>
-            <li><a href="/history">Version History</a></li>
+            <!-- Replace hardcoded links with dynamic loop -->
+            {% if g.main_menu %}
+                {% for item in g.main_menu %}
+                    <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
+                {% endfor %}
+            {% else %}
+                <li><a href="/">Search</a></li> {# Fallback if menu fails #}
+            {% endif %}
         </ul>
     </nav>
 
@@ -335,18 +340,22 @@
             <a href="/history" class="btn-link btn-link-nav">View Version History</a>
         </p> --> <!-- Remove the old link -->
 
-        <!-- Tag Cloud Section -->
-        {% if top_keywords %}
+        <!-- Tag Cloud Section - Use HTML comments -->
+        <!--
         <div class="tag-cloud">
             <h2>Top Keywords</h2>
-            {% for keyword in top_keywords %}
-                <a href="/?keywords={{ keyword.text }}" title="{{ keyword.weight }} files" 
-                   style="font-size: {{ 0.8 + keyword.font_scale * 0.2 }}em; opacity: {{ 0.6 + keyword.font_scale * 0.1 }};">
-                    {{ keyword.text }}
-                </a>
-            {% endfor %}
+            {% if top_keywords %}
+                {% for keyword in top_keywords %}
+                    <a href="{{ url_for('index', keywords=keyword.text) }}" title="{{ keyword.weight }} files"
+                       style="font-size: {{ '%.2f'|format(keyword.font_scale * 0.7 + 0.8) }}em; opacity: {{ '%.2f'|format(keyword.font_scale * 0.1 + 0.8) }};">
+                        {{ keyword.text }}
+                    </a>
+                {% endfor %}
+            {% else %}
+                <p>No keywords found in index.</p>
+            {% endif %}
         </div>
-        {% endif %}
+        -->
 
         <form method="post">
             <div class="form-grid">

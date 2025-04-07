@@ -9,9 +9,9 @@
 <body>
     <nav>
         <ul>
-            {% if menu %}
-                {# Restore original loop with url_for #}
-                {% for item in menu %}
+            <!-- DEBUG: g object in base.html: {{ g }} -->
+            {% if g.main_menu %}
+                {% for item in g.main_menu %}
                     <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
                 {% endfor %}
             {% else %}

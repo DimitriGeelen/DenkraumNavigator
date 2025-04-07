@@ -17,4 +17,12 @@
     2.  **Use Specific Selectors for Content:** For styling list items within the main content area (e.g., backup lists, version lists), apply styles using a more specific selector. Add a class (e.g., `content-list`) to the parent `<ul>` and target the list items with `.content-list li`.
     3.  **Explicitly Reset Component Styles:** For components like the navbar, explicitly define styles for its child elements (e.g., `.navbar li`) to reset any potentially inherited properties (like `padding`, `border`, `background`, `display`) to ensure they don't interfere with the intended appearance.
 
-*Note: The navbar is now dynamically generated based on this file and styled via `static/css/style.css`. These notes are kept for historical context.* 
+*Note: The navbar is now dynamically generated based on this file and styled via `static/css/style.css`. These notes are kept for historical context.*
+
+---
+
+## Debugging Notes
+
+*   **Issue:** Navigation links (specifically "Goals") were missing on the main search page (`index.html`), even though they appeared correctly on other pages (`base.html` derivatives).
+*   **Cause:** The `index.html` template contained a *hardcoded* HTML list for its navigation bar, unlike `base.html` which used a dynamic Jinja loop (`{% for item in g.main_menu %}`).
+*   **Solution:** Replaced the hardcoded `<ul>...</ul>` in `templates/index.html` with the same dynamic Jinja loop used in `base.html` to ensure consistent menu rendering across all pages. 
