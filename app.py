@@ -780,7 +780,7 @@ def download_package():
 GOALS_FILE = 'PROJECT_GOALS.md'
 
 @app.route('/goals')
-def view_goals():
+def show_goals():
     """Displays the project goals in an editable textarea."""
     try:
         with open(GOALS_FILE, 'r', encoding='utf-8') as f:
@@ -792,7 +792,7 @@ def view_goals():
         goals_content = f"# Error reading {GOALS_FILE}\n\n{str(e)}"
         logger.error(f"Error reading {GOALS_FILE}: {e}")
 
-    return render_template('goals.html', goals_content=goals_content, menu=g.main_menu)
+    return render_template('goals.html', goals_content=goals_content, menu=main_menu)
 
 @app.route('/update_goals', methods=['POST'])
 def update_goals():
@@ -800,7 +800,7 @@ def update_goals():
     new_content = request.form.get('goals_content')
     if new_content is None:
         flash('Error: No content received.', 'error')
-        return redirect(url_for('view_goals'))
+        return redirect(url_for('show_goals'))
 
     try:
         # Basic sanitization: replace null bytes
@@ -813,7 +813,7 @@ def update_goals():
         flash(f'Error updating {GOALS_FILE}: {e}', 'error')
         logger.error(f"Error writing {GOALS_FILE}: {e}")
 
-    return redirect(url_for('view_goals'))
+    return redirect(url_for('show_goals'))
 
 # --- End Project Goals Page ---
 
