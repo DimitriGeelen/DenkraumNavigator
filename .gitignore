@@ -24,3 +24,9 @@ instance/
 
 # Database Backups
 backups/ /backups/
+
+# Flask server log
+/flask_server.log
+
+# Restart server script
+# restart_server.sh # Don't ignore this script

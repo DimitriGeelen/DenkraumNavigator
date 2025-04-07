@@ -34,6 +34,12 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 *   Always add unit tests for new functionality.
 
+## Server Management
+
+**Reliable Restart Procedure:**
+1.  Kill existing server process: `pkill -9 -f 'python app.py' || true`
+2.  Start new server process: `source .venv/bin/activate && python app.py` (run in background)
+
 ## Commit & Versioning Workflow
 
 1.  **Run Unit Tests:** Before committing functional changes, run `pytest -v`. Fix any failures.
