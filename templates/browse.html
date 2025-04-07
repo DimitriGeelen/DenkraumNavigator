@@ -222,11 +222,16 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <nav>
         <ul>
-            <li><a href="/">Search Page</a></li>
-            <li><a href="/history">Version History</a></li>
-            <!-- Active state could be added here -->
+            <!-- DEBUG: g object in base.html: {{ g }} -->
+            {% if g.main_menu %}
+                {% for item in g.main_menu %}
+                    <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
+                {% endfor %}
+            {% else %}
+                <li><a href="/">Home (Menu Error)</a></li>
+            {% endif %}
         </ul>
     </nav>
 
