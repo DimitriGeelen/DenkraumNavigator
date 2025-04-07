@@ -27,16 +27,59 @@ app.config.setdefault('DATABASE', 'file_index.db')
 app.config.setdefault('INDEXED_ROOT_DIR', '/dol-data-archive2') # Ensure this default is correct
 app.config.setdefault('BACKUP_DIR', 'backups') # Default backup dir
 
-# --- App Initialization --- 
+# --- Menu Parsing (Restore original global load) ---
+MENU_FILE = 'menu.md'
+
+def parse_menu_file(filepath):
+    """Parses the menu.md file into a list of menu items."""
+    menu_items = []
+    logger.debug(f"Attempting to parse menu file: {filepath}")
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f):
+                original_line = line.strip()
+                logger.debug(f"Reading menu file line {i+1}: '{original_line}'")
+                line = original_line 
+                if not line or line.startswith('#'):
+                    continue
+                if line.startswith('-') and ':' in line and line.find(':') > 1:
+                    try:
+                        content = line[1:].strip()
+                        text, endpoint = content.split(':', 1)
+                        text = text.strip()
+                        endpoint = endpoint.strip()
+                        if '#' in endpoint:
+                            endpoint = endpoint.split('#', 1)[0].strip()
+                        if text and endpoint:
+                            item = {'text': text, 'endpoint': endpoint}
+                            menu_items.append(item)
+                            logger.debug(f"  -> Parsed item: {item}")
+                        else:
+                            logger.warning(f"Ignoring line with empty text or endpoint after parsing: '{original_line}'")
+                    except ValueError:
+                        logger.warning(f"Could not parse potential menu line: '{original_line}'")
+                else:
+                     logger.warning(f"Ignoring line (doesn't match format ' - Text: endpoint'): '{original_line}'")
+    except FileNotFoundError:
+        logger.error(f"Menu file not found: {filepath}. Returning empty menu.")
+    except Exception as e:
+        logger.error(f"Error reading menu file {filepath}: {e}. Returning empty menu.")
+    logger.debug(f"Finished parsing menu file. Items loaded: {menu_items}")
+    return menu_items
+
+# Load menu globally at startup
+main_menu = parse_menu_file(MENU_FILE)
+logger.info(f"Main menu loaded at startup: {main_menu}")
+
+# --- App Initialization / Request Handling (Remove URL generation from here) ---
 @app.before_request
 def before_request():
-    # Ensure backup directory exists before handling requests that might use it
-    backup_dir = current_app.config.get('BACKUP_DIR', 'backups') # Use default if not set
+    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
     os.makedirs(backup_dir, exist_ok=True)
-    # Make DATABASE and BACKUP_DIR easily accessible in templates if needed
     g.DATABASE = current_app.config['DATABASE']
     g.BACKUP_DIR = current_app.config['BACKUP_DIR']
-    
+    # Remove g.main_menu generation
+
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
     db = getattr(g, '_database', None)
@@ -207,62 +250,6 @@ def backup_now():
     # Redirect back to the history page (or wherever appropriate)
     return redirect(url_for('history'))
 
-MENU_FILE = 'menu.md'
-
-def parse_menu_file(filepath):
-    """Parses the menu.md file into a list of menu items."""
-    menu_items = []
-    logger.debug(f"Attempting to parse menu file: {filepath}") # DEBUG
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            for i, line in enumerate(f):
-                original_line = line.strip() # Keep original for logging
-                logger.debug(f"Reading menu file line {i+1}: '{original_line}'") # DEBUG
-                
-                # Remove potential leading/trailing whitespace AFTER initial read for logging
-                line = original_line 
-                
-                # Ignore blank lines and comments
-                if not line or line.startswith('#'):
-                    continue
-
-                # Check format: starts with '-', contains ':', has text before ':'
-                if line.startswith('-') and ':' in line and line.find(':') > 1:
-                    try:
-                        # Remove leading '-' and split at the FIRST colon
-                        content = line[1:].strip()
-                        text, endpoint = content.split(':', 1)
-                        text = text.strip()
-                        endpoint = endpoint.strip()
-                        
-                        # Remove trailing comments from endpoint
-                        if '#' in endpoint:
-                            endpoint = endpoint.split('#', 1)[0].strip()
-                            
-                        # Final check if text and endpoint are non-empty after stripping
-                        if text and endpoint:
-                            item = {'text': text, 'endpoint': endpoint}
-                            menu_items.append(item)
-                            logger.debug(f"  -> Parsed item: {item}") # DEBUG
-                        else:
-                            logger.warning(f"Ignoring line with empty text or endpoint after parsing: '{original_line}'")
-                    except ValueError:
-                        # This shouldn't happen often with the checks above, but good to have
-                        logger.warning(f"Could not parse potential menu line: '{original_line}'")
-                else:
-                     # Use warning level for lines that look like they might be menu items but are malformed
-                     logger.warning(f"Ignoring line (doesn't match format ' - Text: endpoint'): '{original_line}'") # WARNING
-    except FileNotFoundError:
-        logger.error(f"Menu file not found: {filepath}. Returning empty menu.")
-    except Exception as e:
-        logger.error(f"Error reading menu file {filepath}: {e}. Returning empty menu.")
-    logger.debug(f"Finished parsing menu file. Items loaded: {menu_items}") # DEBUG
-    return menu_items
-
-# Load menu at startup
-main_menu = parse_menu_file(MENU_FILE)
-logger.info(f"Main menu loaded at startup: {main_menu}") # INFO log for final structure
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = []
@@ -310,13 +297,16 @@ def index():
     top_keywords = get_top_keywords(limit=50) # Get top 50 keywords
     print(f"DEBUG: Top Keywords Data (first 5): {top_keywords[:5]}") # Add this debug print
 
+    # *** ADD LOGGING HERE ***
+    logger.info(f"[Route: /] Value of main_menu being passed to template: {g.main_menu}")
+
     # On GET or after POST, render the template with results and previous terms
     return render_template('index.html', results=results, 
                            search_terms=search_terms, 
                            top_keywords=top_keywords,
                            distinct_types=distinct_types,
                            distinct_years=distinct_years,
-                           menu=main_menu)
+                           menu=g.main_menu)
 
 @app.route('/download/') # Note the trailing slash
 @app.route('/download/<path:file_path>')
@@ -619,7 +609,7 @@ def history():
                            tag_details=tag_details,
                            commit_details=commit_details, # Pass commit details
                            manual_db_backups=manual_db_backups,
-                           menu=main_menu)
+                           menu=g.main_menu)
                            # Remove old backup lists
                            # commit_db_backups=commit_db_backups,
                            # commit_code_backups=commit_code_backups)
@@ -690,7 +680,7 @@ def browse(sub_path=''):
                            breadcrumbs=breadcrumbs,
                            directories=dirs, 
                            files=files,
-                           menu=main_menu)
+                           menu=g.main_menu)
 
 @app.route('/download_code')
 def download_code():
@@ -802,7 +792,7 @@ def view_goals():
         goals_content = f"# Error reading {GOALS_FILE}\n\n{str(e)}"
         logger.error(f"Error reading {GOALS_FILE}: {e}")
 
-    return render_template('goals.html', goals_content=goals_content, menu=main_menu)
+    return render_template('goals.html', goals_content=goals_content, menu=g.main_menu)
 
 @app.route('/update_goals', methods=['POST'])
 def update_goals():

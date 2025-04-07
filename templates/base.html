@@ -10,6 +10,7 @@
     <nav>
         <ul>
             {% if menu %}
+                {# Restore original loop with url_for #}
                 {% for item in menu %}
                     <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
                 {% endfor %}
