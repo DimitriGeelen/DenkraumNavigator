@@ -99,6 +99,8 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
     2.  **Use Specific Selectors for Content:** For styling list items within the main content area (e.g., backup lists, version lists), apply styles using a more specific selector. Add a class (e.g., `content-list`) to the parent `<ul>` and target the list items with `.content-list li`.
     3.  **Explicitly Reset Component Styles:** For components like the navbar, explicitly define styles for its child elements (e.g., `.navbar li`) to reset any potentially inherited properties (like `padding`, `border`, `background`, `display`) to ensure they don't interfere with the intended appearance.
 
+# Another test line for commit verification.
+
 ## Testing
 
 ... 
