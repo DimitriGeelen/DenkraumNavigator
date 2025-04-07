@@ -43,6 +43,8 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Commit & Versioning Workflow
 
+**Important Note (AI Assistant Interaction):** When instructing the AI assistant to perform a commit using the terminal tool, avoid using multi-line commit messages within the `-m "..."` flag. Use a single-line message instead, or the command may fail.
+
 1.  **Run Unit Tests:** Before committing functional changes, run `pytest -v`. Fix any failures.
 2.  **Stage Changes:** Stage the functionally complete changes (`git add .` or specific files).
 3.  **Commit Functional Changes:** Commit with a conventional commit message (`git commit -m "type: Description"`).
@@ -100,3 +102,4 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 ## Testing
 
 ... 
+# Test commit for download link verification.
