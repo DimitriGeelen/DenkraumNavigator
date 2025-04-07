@@ -1,349 +1,76 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>DenkraumNavigator: Suchwerkzeug für das denken ohne Geländer Archiv</title>
-    <style>
-        /* === Global Styles === */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height: 1.5; /* Slightly reduced line height */
-            margin: 0;
-            background-color: #f8f9fa;
-            color: #343a40;
-            font-size: 0.95rem; /* Slightly smaller base font */
-        }
-        /* === Navbar Styles === */
-        .navbar {
-            background-color: #343a40; /* Dark background */
-            padding: 10px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .navbar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            justify-content: flex-end; /* Align items to the right */
-        }
-        .navbar li {
-            margin-left: 15px; /* Space between nav items */
-        }
-        .navbar a {
-            color: #f8f9fa; /* Light text */
-            text-decoration: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
-        }
-        .navbar a:hover {
-            background-color: #495057;
-            color: #fff;
-        }
-        /* Style for button-like links in navbar */
-        .navbar .btn-link {
-             background-color: #6c757d;
-             border: 1px solid #6c757d;
-             color: #fff;
-        }
-        .navbar .btn-link:hover {
-             background-color: #5a6268;
-             border-color: #545b62;
-        }
+{% extends 'base.html' %}
 
-        .container {
-            max-width: 1100px; /* Wider container */
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        h1, h2 {
-            color: #212529;
-            text-align: center;
-            margin-bottom: 1.2em;
-        }
-        h1 {
-            font-size: 2.2em;
-            font-weight: 600;
-        }
-        h2 {
-            font-size: 1.6em;
-            font-weight: 500;
-            margin-top: 1.5em;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 0.4em;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-        small {
-             color: #6c757d;
-             font-size: 0.9em; /* Make small text slightly smaller */
-        }
-        hr {
-             border: none;
-             border-top: 1px solid #dee2e6;
-             margin: 25px 0;
-        }
-        p {
-             margin-bottom: 0.8em;
-        }
+{% block title %}DenkraumNavigator Archive Search{% endblock %}
 
-        /* === Link Button Styles === */
-        .btn-link {
-            display: inline-block; /* Needed for padding/margin */
-            padding: 4px 8px; /* Reduced padding */
-            font-size: 0.9em;
-            font-weight: 500; /* Keep slightly bold */
-            color: #fff; /* White text */
-            background-color: #6c757d; /* Default background (grey) */
-            border: 1px solid #6c757d; /* Default border */
-            border-radius: 4px; /* Keep rounded corners */
-            text-align: center;
-            vertical-align: middle;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-            margin: 2px; /* Small margin around buttons */
-        }
-        .btn-link:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
-            color: #fff;
-            text-decoration: none; /* No underline on hover */
-        }
-        /* Specific colors for different buttons */
-        .btn-link-download {
-            background-color: #17a2b8; 
-            border-color: #17a2b8;
-        }
-        .btn-link-download:hover {
-            background-color: #138496;
-            border-color: #117a8b;
-        }
-        .btn-link-reset {
-            background-color: #28a745; /* Success green color */
-            border-color: #28a745;
-            color: #fff; /* Ensure white text */
-        }
-         .btn-link-reset:hover {
-            background-color: #218838;
-            border-color: #1e7e34;
-             color: #fff;
-        }
-        /* Keep Navbar link styling distinct */
-        .btn-link-nav { 
-             /* Let navbar CSS handle navbar link appearance */
-        }
+{% block content %}
+{# Remove redundant nav block, inherit from base.html #}
+{# <nav class="navbar">
+    <ul>
+        {% if g.main_menu %}
+            {% for item in g.main_menu %}
+                <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
+            {% endfor %}
+        {% else %}
+            <li><a href="/">Search</a></li> {# Fallback if menu fails #}
+        {% endif %}
+    </ul>
+</nav> #}
 
-        /* === Form Styles === */
-        form label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            font-size: 0.9em;
-            color: #495057;
-        }
-        form input[type="text"],
-        form input[type="number"],
-        form select {
-            width: 100%; 
-            padding: 10px;
-            margin-bottom: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            box-sizing: border-box; 
-            background-color: #fff; 
-            font-size: 0.95em;
-        }
-        form input:focus,
-        form select:focus {
-             border-color: #80bdff;
-             outline: 0;
-             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-        form select[multiple] {
-             height: auto; 
-             min-height: 100px; /* Reduced height */
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Reduced min width */
-            gap: 15px;
-            margin-bottom: 15px; 
-        }
-        form button[type="submit"] {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 500;
-            transition: background-color 0.2s ease;
-            display: block; 
-            margin: 15px auto 0 auto;
-        }
-        form button[type="submit"]:hover {
-            background-color: #0056b3;
-        }
+<div class="container">
+    <h1>DenkraumNavigator Archive Search</h1>
+    
+    <h2>Filters & Tag Cloud</h2>
+    <div class="filters-tagcloud-grid">
+        <div class="filters">
+            <h3>Search Filters</h3>
+            <form method="post">
+                <div class="form-grid">
+                    <div>
+                        <label for="filename">Filename contains:</label>
+                        <input type="text" id="filename" name="filename" value="{{ search_terms.filename or '' }}">
+                    </div>
+                    
+                    <details>
+                        <summary>Year</summary>
+                        <div>
+                            <label for="year" style="display:none;">Year:</label>
+                            <select id="year" name="year" multiple size="5">
+                                <option value="" {% if not search_terms.year %}selected{% endif %}>-- Any Year --</option>
+                                {% for year_option in distinct_years %}
+                                    <option value="{{ year_option }}" {% if year_option|string in search_terms.year %}selected{% endif %}>{{ year_option }}</option>
+                                {% endfor %}
+                            </select>
+                            <small>(Hold Ctrl/Cmd to select multiple)</small>
+                        </div>
+                    </details>
+                    
+                    <details>
+                        <summary>File Type(s)</summary>
+                        <div>
+                            <label for="type" style="display:none;">File Type(s):</label>
+                            <select id="type" name="type" multiple size="5">
+                                <option value="" {% if not search_terms.type %}selected{% endif %}>-- Any Type --</option>
+                                {% for type_option in distinct_types %}
+                                    <option value="{{ type_option }}" {% if type_option in search_terms.type %}selected{% endif %}>{{ type_option }}</option>
+                                {% endfor %}
+                            </select>
+                            <small>(Hold Ctrl/Cmd to select multiple)</small>
+                        </div>
+                    </details>
 
-        /* === Collapsible Filter Styles === */
-        details {
-             margin-bottom: 10px;
-             border: 1px solid #e9ecef;
-             border-radius: 5px;
-             background-color: #fdfdfd;
-        }
-        details > summary {
-            cursor: pointer;
-            font-weight: 600;
-            padding: 8px 12px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef; 
-            border-radius: 5px 5px 0 0; 
-            list-style: none; 
-            position: relative;
-            font-size: 0.95em;
-        }
-        details > summary::before { 
-            content: '\25B6'; 
-            position: absolute;
-            left: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.7em;
-            color: #6c757d;
-            transition: transform 0.2s ease;
-        }
-        details[open] > summary::before {
-             transform: translateY(-50%) rotate(90deg);
-        }
-        details > summary:hover {
-            background-color: #e9ecef;
-        }
-        details[open] > summary {
-             border-bottom: 1px solid #e9ecef; 
-        }
-         details > div { 
-            padding: 12px;
-            border-top: none;
-            background-color: #fff;
-            border-radius: 0 0 5px 5px;
-        }
-
-        /* === Tag Cloud Styles === */
-        .tag-cloud {
-            text-align: center;
-            padding: 20px 10px;
-            margin-bottom: 25px;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            background-color: #f8f9fa;
-        }
-        .tag-cloud h2 {
-             border-bottom: none; 
-             margin-bottom: 0.8em;
-             font-size: 1.5em;
-        }
-        .tag-cloud a {
-            text-decoration: none;
-            color: #007bff;
-            margin: 2px 3px; 
-            display: inline-block; 
-            padding: 4px 8px;
-            border-radius: 4px;
-            background-color: #e9ecef; 
-            transition: background-color 0.2s ease;
-            font-size: 0.85em; 
-        }
-        .tag-cloud a:hover {
-            background-color: #d3d9df;
-            color: #0056b3;
-        }
-
-        /* === Results Styles === */
-        .results {
-            margin-top: 30px;
-        }
-        .results h2 {
-             text-align: left;
-             font-size: 1.5em;
-        }
-        .result-item {
-            background: #ffffff;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid #e9ecef;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            transition: box-shadow 0.2s ease;
-        }
-        .result-item:hover {
-            box-shadow: 0 3px 6px rgba(0,0,0,0.06);
-        }
-        .result-item p {
-            margin: 6px 0;
-            font-size: 0.9em;
-            word-break: break-word; 
-        }
-        .result-item strong {
-            color: #495057;
-            margin-right: 4px;
-        }
-        .result-item p:first-child { /* Container for Path and Download */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .result-item p:first-child strong { 
-             font-weight: 600;
-        }
-         .result-item .btn-link-download {
-              /* Base .btn-link padding is now smaller */
-              vertical-align: middle; /* Align better with text */
-         }
-        .no-results {
-            text-align: center;
-            color: #6c757d;
-            margin-top: 25px;
-            font-style: italic;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <ul>
-            <!-- Replace hardcoded links with dynamic loop -->
-            {% if g.main_menu %}
-                {% for item in g.main_menu %}
-                    <li><a href="{{ url_for(item.endpoint) }}">{{ item.text }}</a></li>
-                {% endfor %}
-            {% else %}
-                <li><a href="/">Search</a></li> {# Fallback if menu fails #}
-            {% endif %}
-        </ul>
-    </nav>
-
-    <div class="container">
-        <h1>DenkraumNavigator: Suchwerkzeug für das denken ohne Geländer Archiv</h1>
-        <!-- <p style="text-align: center;">
-            <a href="/history" class="btn-link btn-link-nav">View Version History</a>
-        </p> --> <!-- Remove the old link -->
-
-        <!-- Tag Cloud Section - Use HTML comments -->
-        <!--
+                    <div>
+                        <label for="keywords">Keywords (comma-separated):</label>
+                        <input type="text" id="keywords" name="keywords" value="{{ search_terms.keywords or '' }}">
+                    </div>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit">Search</button>
+                    <a href="{{ url_for('index') }}" class="btn-link btn-link-reset">Reset Filters</a>
+                </div>
+            </form>
+        </div>
         <div class="tag-cloud">
-            <h2>Top Keywords</h2>
+            <h3>Keyword Cloud</h3>
             {% if top_keywords %}
                 {% for keyword in top_keywords %}
                     <a href="{{ url_for('index', keywords=keyword.text) }}" title="{{ keyword.weight }} files"
@@ -355,93 +82,40 @@
                 <p>No keywords found in index.</p>
             {% endif %}
         </div>
-        -->
-
-        <form method="post">
-            <div class="form-grid">
-                <div>
-                    <label for="filename">Filename contains:</label>
-                    <input type="text" id="filename" name="filename" value="{{ search_terms.filename or '' }}">
-                </div>
-                
-                <details>
-                    <summary>Year</summary>
-                    <div>
-                        <label for="year" style="display:none;">Year:</label> <!-- Hide label, summary acts as label -->
-                        <select id="year" name="year" multiple size="5" style="width:100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="" {% if not search_terms.year %}selected{% endif %}>-- Any Year --</option>
-                            {% for year_option in distinct_years %}
-                                <option value="{{ year_option }}" 
-                                        {% if year_option|string in search_terms.year %}selected{% endif %}>
-                                    {{ year_option }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <small>(Hold Ctrl/Cmd to select multiple)</small>
-                    </div>
-                </details>
-                
-                <details>
-                    <summary>File Type(s)</summary>
-                    <div>
-                         <label for="type" style="display:none;">File Type(s):</label>
-                         <select id="type" name="type" multiple size="5" style="width:100%;">
-                             <option value="" {% if not search_terms.type %}selected{% endif %}>-- Any Type --</option>
-                             {% for type_option in distinct_types %}
-                                 <option value="{{ type_option }}" 
-                                         {% if type_option in search_terms.type %}selected{% endif %}>
-                                     {{ type_option }}
-                                 </option>
-                             {% endfor %}
-                         </select>
-                         <small>(Hold Ctrl/Cmd to select multiple)</small>
-                    </div>
-                </details>
-
-                 <div>
-                     <label for="keywords">Keywords (comma-separated):</label>
-                     <input type="text" id="keywords" name="keywords" value="{{ search_terms.keywords or '' }}">
-                 </div>
-            </div>
-            <div class="form-buttons" style="text-align: center; margin-top: 20px;">
-                 <button type="submit">Search</button>
-                 <a href="/" class="btn-link btn-link-reset">Reset Filters</a>
-            </div>
-        </form>
-
-        <div class="results">
-            <h2>Search Results</h2>
-            {% if results %}
-                <p>Found {{ results|length }} matching files.</p>
-                {% for result in results %}
-                <div class="result-item">
-                    <p><strong>Path:</strong> {{ result.path }} 
-                       <span>
-                           <a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" 
-                              title="Download {{ result.filename }}" 
-                              class="btn-link btn-link-download">
-                               Download
-                           </a>
-                       </span>
-                    </p>
-                    <p><strong>Type:</strong> {{ result.category_type }}</p>
-                    <p><strong>Year:</strong> {{ result.category_year }}</p>
-                    <p><strong>Extract / Summary:</strong> 
-                        {% if result.summary %}
-                            {{ result.summary[:1000] + ('...' if result.summary|length > 1000 else '') }}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </p>
-                    <p><strong>Keywords:</strong> {{ result.keywords or 'N/A' }}</p>
-                </div>
-                {% endfor %}
-            {% elif request.method == 'POST' %}
-                <p class="no-results">No files found matching your criteria.</p>
-            {% else %}
-                 <p class="no-results">Enter search terms above to begin.</p>
-            {% endif %}
-        </div>
     </div>
-</body>
-</html> 
+
+    <div class="results">
+        <h2>Search Results</h2>
+        {% if results %}
+            <p>Found {{ results|length }} matching files.</p>
+            {% for result in results %}
+            <div class="result-item">
+                <p><strong>Path:</strong> {{ result.path }} 
+                   <span>
+                       <a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" 
+                          title="Download {{ result.filename }}" 
+                          class="btn-link btn-link-download">
+                           Download
+                       </a>
+                   </span>
+                </p>
+                <p><strong>Type:</strong> {{ result.category_type }}</p>
+                <p><strong>Year:</strong> {{ result.category_year }}</p>
+                <p><strong>Extract / Summary:</strong> 
+                    {% if result.summary %}
+                        {{ result.summary[:1000] + ('...' if result.summary|length > 1000 else '') }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <p><strong>Keywords:</strong> {{ result.keywords or 'N/A' }}</p>
+            </div>
+            {% endfor %}
+        {% elif request.method == 'POST' %}
+            <p class="no-results">No files found matching your criteria.</p>
+        {% else %}
+             <p class="no-results">Enter search terms above to begin.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
