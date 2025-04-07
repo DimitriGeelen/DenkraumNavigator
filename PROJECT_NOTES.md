@@ -15,8 +15,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Development Practices
 
-*   Always add unit tests for new functionality.
-*   Ensure any new shell scripts (`.sh`) are made executable (`chmod +x <script_name>.sh`).
+*Please refer to the `DEVELOPMENT_PRACTICES.md` file for current development guidelines.*
 
 ## Server Management
 
