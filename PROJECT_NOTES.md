@@ -72,15 +72,20 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 3.  **List of Tagged Versions:** Iterate through Git tags.
     *   Display: Tag Name (e.g., v0.7.0), associated Commit ID (short hash), Commit Date, Commit Subject (first line of message).
     *   Include a "Download Package" button for each tagged version, linking to a route that bundles the code and database backup associated with that tag's commit.
-4.  **Manual Backup Section:**
+4.  **Detailed Commit History (Recent Commits):**
+    *   Fetch a list of recent commits (e.g., last 50) using `git log`.
+    *   For each commit, display:
+        *   Commit Hash (short).
+        *   Commit Date/Timestamp.
+        *   Commit Subject (first line of message).
+        *   Tag Name(s) associated with this commit, if any (e.g., v0.7.0).
+        *   A "Download Package" button linking to `/download_commit_package/<hash>`, **only if** the corresponding `db_commit_<hash>.db` and `code_commit_<hash>.zip` files exist in the `backups/` directory. (The link should perhaps be greyed out or omitted if backups are missing).
+5.  **Manual Backup Section:**
     *   Include the "Create New Manual Database Backup Now" button.
     *   List existing manual DB backups (`file_index_*.db`) with Download and Restore buttons.
-5.  **Commit Backup Sections:**
-    *   List commit-based DB backups (`db_commit_*.db`) with Download/Restore buttons.
-    *   List commit-based Code backups (`code_commit_*.zip`) with Download buttons.
 6.  **Commit Workflow Notes:** Display the steps from the "Commit & Versioning Workflow" section of these notes.
 
-*Note: A button to trigger a commit directly from the web UI is generally impractical and potentially unsafe, so it will be omitted. Commits should be made via the command line.*
+*Note: The previous sections listing individual commit-based backup *files* (`db_commit_*`, `code_commit_*`) are replaced by the Detailed Commit History section above.*
 
 ## Design Notes
 

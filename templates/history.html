@@ -268,7 +268,31 @@
 
         <hr>
 
-        {# 4. Manual Backup Section #}
+        {# 4. Detailed Commit History #}
+        <h2>Detailed Commit History (Last 50)</h2>
+        {% if commit_details %}
+            <ul class="content-list"> {# Use the same class for styling #}
+            {% for commit in commit_details %}
+                <li>
+                    <span><strong>{{ commit.hash }}</strong> {% if commit.tags %}<span style="color: #28a745; font-weight: bold;"> (Tags: {{ commit.tags }})</span>{% endif %}</span>
+                    <span class="details">{{ commit.date }} - {{ commit.subject }}</span>
+                    <div class="actions">
+                         {% if commit.backups_exist %}
+                            <a href="{{ url_for('download_commit_package', commit_hash=commit.hash) }}" title="Download package for commit {{ commit.hash }}" class="btn-link btn-link-download-package">Download Package</a>
+                         {% else %}
+                            <span style="color: #6c757d; font-size: 0.9em;" title="Backup files not found for this commit in /backups">Package N/A</span>
+                         {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Could not retrieve commit history.</p>
+        {% endif %}
+
+        <hr>
+
+        {# 5. Manual Backup Section #}
         <h2>Manual Database Backups (.db)</h2>
         <form action="{{ url_for('backup_now') }}" method="post" style="text-align: left; margin-bottom: 20px;">
             <button type="submit" class="btn-link btn-link-reset">Create New Manual Database Backup Now</button>
@@ -289,46 +313,6 @@
             </ul>
         {% else %}
             <p>No manual database backups found (starting with 'file_index_').</p>
-        {% endif %}
-
-        <hr>
-
-        {# 5. Commit Backup Sections #}
-        <h2>Commit Database Backups (.db)</h2>
-        <p>Created automatically after each Git commit.</p>
-        {% if commit_db_backups %}
-            <ul class="content-list">
-            {% for backup_file in commit_db_backups %}
-                <li>
-                    <span>{{ backup_file }}</span>
-                    <div class="actions">
-                        <a href="{{ url_for('download_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-db">Download DB</a>
-                        <form action="{{ url_for('restore_backup', filename=backup_file) }}" method="post" style="display: inline; margin-left: 5px;">
-                            <button type="submit" class="btn-link btn-link-restore" onclick="return confirm('DANGER! Restore {{ backup_file }}?\n\nThe current live database (file_index.db) will be PERMANENTLY OVERWRITTEN.\n\nThis cannot be undone. Are you absolutely sure?');">Restore</button>
-                        </form>
-                    </div>
-                </li>
-            {% endfor %}
-            </ul>
-        {% else %}
-            <p>No commit-based database backups found (starting with 'db_commit_').</p>
-        {% endif %}
-
-        <h2>Commit Code Backups (.zip)</h2>
-        <p>Created automatically after each Git commit.</p>
-        {% if commit_code_backups %}
-            <ul class="content-list">
-            {% for backup_file in commit_code_backups %}
-                <li>
-                    <span>{{ backup_file }}</span>
-                    <div class="actions">
-                         <a href="{{ url_for('download_code_backup', filename=backup_file) }}" title="Download {{ backup_file }}" class="btn-link btn-link-download-code">Download Code</a>
-                    </div>
-                </li>
-            {% endfor %}
-            </ul>
-        {% else %}
-             <p>No commit-based code backups found (starting with 'code_commit_').</p>
         {% endif %}
 
         <hr>

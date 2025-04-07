@@ -480,59 +480,85 @@ def download_commit_package(commit_hash):
         logger.error(f"Error creating package zip for commit {commit_hash}: {e}")
         abort(500)
 
+def get_commit_details(limit=50):
+    """Gets details for the most recent commits, including associated tags and backup status."""
+    commits = []
+    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
+    # Format: hash<|>date_iso<|>subject<|>tag_refs
+    # %d gives ref names like (HEAD -> master, tag: v0.1.0)
+    format_string = "%h<|>%cI<|>%s<|>%d"
+    try:
+        # Git log command to get details for the last 'limit' commits
+        command = ["git", "log", f"--pretty=format:{format_string}", f"-n{limit}"]
+        result = subprocess.run(command, capture_output=True, text=True, check=True, encoding='utf-8')
+        lines = result.stdout.strip().split('\n')
+
+        for line in lines:
+            if not line:
+                continue
+            parts = line.split('<|>', 3)
+            if len(parts) == 4:
+                commit_hash, commit_date, subject, refs = parts
+                # Extract tags from refs
+                # Refs look like: (HEAD -> master, tag: v0.1.0, origin/master)
+                tags = re.findall(r'tag: ([^,\)]+)', refs)
+                tag_string = ", ".join(tags) if tags else ""
+
+                # Check for backup file existence
+                db_backup_pattern = os.path.join(backup_dir, f"db_commit_{commit_hash}*.db")
+                code_backup_pattern = os.path.join(backup_dir, f"code_commit_{commit_hash}*.zip")
+                db_exists = bool(glob.glob(db_backup_pattern))
+                code_exists = bool(glob.glob(code_backup_pattern))
+                backups_exist = db_exists and code_exists
+
+                commits.append({
+                    'hash': commit_hash,
+                    'date': commit_date,
+                    'subject': subject,
+                    'tags': tag_string,
+                    'backups_exist': backups_exist
+                })
+            else:
+                 logger.warning(f"Could not parse git log line: {line}")
+
+    except FileNotFoundError:
+        logger.error("Git command not found. Is Git installed and in PATH?")
+        return []
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Git log command failed: {e}")
+        logger.error(f"Git stderr: {e.stderr}")
+        return []
+    except Exception as e:
+        logger.error(f"Error processing git log for commits: {e}")
+        return []
+    return commits
+
 @app.route('/history')
 def history():
-    """Displays git commit history, tag details, and lists available backups."""
+    """Displays version history, tags, backups, and commit log."""
     backup_dir = current_app.config['BACKUP_DIR'] # Use config
-    # Get Git log
-    history_log = []
-    try:
-        # Use a format that's easy to parse/display
-        log_format = "%h -- %ad -- %s" # hash -- date -- subject
-        date_format = "%Y-%m-%d %H:%M" # Short date format
-        git_log_cmd = ["git", "log", "--pretty=format:" + log_format, "--date=format:" + date_format, "-n", "50"] # Show last 50 commits
-        
-        result = subprocess.run(git_log_cmd, capture_output=True, text=True, check=True)
-        history_log = result.stdout.strip().split('\n')
-    except FileNotFoundError:
-        history_log = ["Error: 'git' command not found. Is Git installed and in PATH?"]
-        logger.error("'git' command not found when trying to get commit history.")
-    except subprocess.CalledProcessError as e:
-        history_log = [f"Error running git log: {e.stderr}"]
-        logger.error(f"Error running git log: {e.stderr}")
-    except Exception as e:
-        history_log = [f"An unexpected error occurred retrieving git log: {e}"]
-        logger.error(f"An unexpected error occurred retrieving git log: {e}")
+    # Ensure backup directory exists
+    os.makedirs(backup_dir, exist_ok=True)
 
     # Get Tag Details
     tag_details = get_tag_details()
 
-    # Get Backups
-    manual_db_backups = []
-    commit_db_backups = []
-    commit_code_backups = []
-    tagged_db_backups = []
-    tagged_code_backups = []
-    try:
-        all_files = sorted(os.listdir(backup_dir), reverse=True) # Use config path
-        manual_db_backups = [f for f in all_files if f.startswith('file_index_') and f.endswith('.db')]
-        commit_db_backups = [f for f in all_files if f.startswith('db_commit_') and f.endswith('.db')]
-        commit_code_backups = [f for f in all_files if f.startswith('code_commit_') and f.endswith('.zip')]
-        tagged_db_backups = [f for f in all_files if f.startswith('db_tag_') and f.endswith('.db')]
-        tagged_code_backups = [f for f in all_files if f.startswith('code_tag_') and f.endswith('.zip')]
-    except FileNotFoundError:
-        logger.warning(f"Backup directory '{backup_dir}' not found.") # Use config path
-    except Exception as e:
-        logger.error(f"Error listing backup directory '{backup_dir}': {e}") # Use config path
+    # Get Commit Details (New Function)
+    commit_details = get_commit_details(limit=50) # Get last 50 commits
+
+    # Get lists of backup files (Manual only now)
+    manual_db_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('file_index_') and f.endswith('.db')], reverse=True)
+    # Remove the old commit backup file lists
+    # commit_db_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('db_commit_') and f.endswith('.db')], reverse=True)
+    # commit_code_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('code_commit_') and f.endswith('.zip')], reverse=True)
 
     return render_template('history.html', 
-                           history_log=history_log, 
-                           tag_details=tag_details, # Pass tag details
-                           manual_db_backups=manual_db_backups,
-                           commit_db_backups=commit_db_backups,
-                           commit_code_backups=commit_code_backups,
-                           tagged_db_backups=tagged_db_backups,
-                           tagged_code_backups=tagged_code_backups)
+                           tag_details=tag_details,
+                           commit_details=commit_details, # Pass commit details
+                           manual_db_backups=manual_db_backups)
+                           # Remove old backup lists
+                           # commit_db_backups=commit_db_backups,
+                           # commit_code_backups=commit_code_backups)
 
 @app.route('/browse/')
 @app.route('/browse/<path:sub_path>')
