@@ -21,6 +21,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
     *   Add a "Restore" button next to each DB backup (manual or commit-based) on the `/history` page.
     *   Implement backend logic.
     *   Include confirmation prompts.
+    *   **(Code Implemented - Pending User Testing)**
 
 ## Decisions Made
 
@@ -29,13 +30,11 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 *   Linting: Added `flake8` and `ruff`, fixed initial issues.
 *   Backup Strategy: Primarily automatic via `post-commit` hook; manual DB backup retained.
 
+## Development Practices
+
+*   Always add unit tests for new functionality.
+
 ## Open Questions / Ideas
 
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
-*   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions).
-
-# Test change for commit hook
-# Test change for tagged commit
-# Final test for code archive fix
-# Final test take 2
-# Final test take 3 (zip -d) 
+*   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions). 
