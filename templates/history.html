@@ -235,6 +235,13 @@
                     <br><small class="details">{{ tag.subject }}</small>
                 </span>
                 <div class="actions">
+                     {# Add Download Change Notes button for Tags #}
+                     <a href="{{ url_for('download_change_notes', commit_hash=tag.hash) }}"
+                        class="btn-link"
+                        title="Download change notes (commit message) for {{ tag.name }} ({{ tag.hash }})">
+                         Download Notes
+                     </a>
+                     {# Existing Download Package Button #}
                      <a href="{{ url_for('download_commit_package', commit_hash=tag.hash) }}" 
                         class="btn-link btn-link-download-package" 
                         title="Download package for {{ tag.name }} ({{ tag.hash }})">
@@ -259,6 +266,14 @@
                     <br><small class="details">{{ commit.subject }}</small>
                 </span>
                 <div class="actions">
+                    {# Download Change Notes Button #}
+                    <a href="{{ url_for('download_change_notes', commit_hash=commit.hash) }}"
+                       class="btn-link" {# Use default btn-link style for now #}
+                       title="Download change notes (commit message) for {{ commit.hash }}">
+                        Download Notes
+                    </a>
+                    
+                    {# Existing Download Package Button #}
                     {% if commit.backups_exist %}
                         <a href="{{ url_for('download_commit_package', commit_hash=commit.hash) }}" 
                            class="btn-link btn-link-download-package" 
