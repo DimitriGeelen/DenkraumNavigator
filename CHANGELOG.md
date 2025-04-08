@@ -1,4 +1,13 @@
 # Changelog
+## [4.6.0] - 2025-04-08
+
+### Changes
+
+- feat: Add Config Check page to main menu (ad1fd70)
+- test: Create commit to verify download link on history page - integration (cab0f66)
+- test: Create commit to verify download link on history page - integration (14fbeb3)
+- test: Create commit to verify download link on history page - integration (fdccfc5)
+
 ## [4.5.0] - 2025-04-08
 
 ### Changes
