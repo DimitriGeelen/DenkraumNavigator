@@ -20,4 +20,10 @@ Record key learnings, insights, and reflections during the project here.
     5.  If the port is still in use, use `fuser -k -TERM <PORT>/tcp` for a graceful kill.
     6.  If still in use after a pause, use `fuser -k -KILL <PORT>/tcp` for a forceful kill.
     7.  Include pauses (`sleep`) after kill attempts to allow the OS time to release the port.
-- 
+- **NLTK Data Dependencies:** The `indexer.py` script requires specific NLTK data packages for text processing (like keyword extraction). If these are missing on the server, the script will fail with a `LookupError`. As of commit `35be14d`, the required packages are `stopwords`, `punkt`, and `punkt_tab`. These must be downloaded within the application's virtual environment. 
+    - **Manual Download:** `source .venv/bin/activate && python3 -c "import nltk; nltk.download(['stopwords', 'punkt', 'punkt_tab'])"`
+    - **Automation:** The download command has been added to `deploy.sh` (runs after `pip install`) and `reindex.sh` (runs after activating the venv) to ensure the data is present automatically.
+- **Tesseract OCR (Optional Dependency):** For extracting text from image files (OCR), the indexer requires the `tesseract-ocr` engine to be installed on the system. 
+    - If Tesseract is not found, the indexer will show a warning and skip OCR for images, but will continue indexing other files.
+    - **Installation (Debian/Ubuntu):** `sudo apt-get install -y tesseract-ocr` plus language packs (e.g., `tesseract-ocr-eng`, `tesseract-ocr-deu`).
+    - **Automation:** The installation commands have been added to `deploy.sh`.

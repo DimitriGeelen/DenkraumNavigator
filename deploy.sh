@@ -51,8 +51,8 @@ fi
 
 echo_step "Updating package lists and installing dependencies"
 sudo apt-get update
-sudo apt-get install -y git $PYTHON_CMD ${PYTHON_CMD}-venv unzip ufw # Added ufw
-echo_info "Dependencies installed: git, python3, python3-venv, unzip, ufw"
+sudo apt-get install -y git $PYTHON_CMD ${PYTHON_CMD}-venv unzip ufw tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu # Added ufw and Tesseract
+echo_info "Dependencies installed: git, python3, python3-venv, unzip, ufw, tesseract-ocr, tesseract-ocr-eng, tesseract-ocr-deu"
 
 echo_step "Cloning/Updating repository from $REPO_URL"
 if [ -d "$INSTALL_DIR/.git" ]; then
