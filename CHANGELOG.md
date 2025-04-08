@@ -1,4 +1,21 @@
 # Changelog
+## [4.4.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (29dceb1)
+- docs: Update project notes and restart script (bddb645)
+- fix: Restore menu parsing and fix test DB connection (b08e3b3)
+- test: Create commit to verify download link on history page - integration (f6e56fe)
+- test: Create commit to verify download link on history page - integration (c10c79f)
+- test: Create commit to verify download link on history page - integration (15823d3)
+- test: Create commit to verify download link on history page - integration (beb81e6)
+- test: Create commit to verify download link on history page - integration (d495369)
+- docs: Update server management notes for restart scripts (6c9da4c)
+- feat: Add separate prod/dev restart scripts for gunicorn binding (273ae53)
+- feat: Bind gunicorn to dynamic LAN IP in restart script (a664b89)
+- refactor: Update deploy/restart scripts for gunicorn and automation (d9424f4)
+
 ## [4.3.0] - 2025-04-08
 
 ### Changes
