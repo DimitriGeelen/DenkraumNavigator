@@ -1,4 +1,12 @@
 # Changelog
+## [3.1.0] - 2025-04-08
+
+### Changes
+
+- feat: Add md_files template and update .gitignore (86ea19b)
+- quantum uncertainlty chnages detcted and included due to verified working release (b789090)
+- fix: Display release notes in Version Tags section on history page (82e152d)
+
 
 ## [v3.0.0] - YYYY-MM-DD
 
