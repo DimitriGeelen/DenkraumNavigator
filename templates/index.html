@@ -8,9 +8,25 @@
     <div class="container">
     <h1>DenkraumNavigator Archive Search</h1>
     
+    {# Floating Navigation Menu #}
+    {% if page_nav_items %}
+    <div class="page-nav-links"> 
+        <div class="page-nav-header">
+            <span>Page Sections</span> {# Title #}
+            <button id="toggle-page-nav" title="Toggle Navigation">▼</button> 
+        </div>
+        <ul id="page-nav-list"> 
+            <li><a href="#">Top</a></li> 
+            {% for item in page_nav_items %}
+                <li><a href="{{ item.href }}">{{ item.text }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
     <h2>Filters & Tag Cloud</h2>
     <div class="filters-tagcloud-grid">
-        <div class="filters">
+        <div class="filters" id="filters">
             <h3>Search Filters</h3>
         <form method="post">
             <div class="form-grid">
@@ -58,7 +74,7 @@
             </div>
         </form>
         </div>
-        <div class="tag-cloud">
+        <div class="tag-cloud" id="keywords">
             <h3>Keyword Cloud</h3>
             {% if top_keywords %}
                 {% for keyword in top_keywords %}
@@ -72,7 +88,7 @@
         </div>
     </div>
 
-        <div class="results">
+        <div class="results" id="results">
             <h2>Search Results</h2>
             {% if results %}
                 <p>Found {{ results|length }} matching files.</p>
@@ -136,4 +152,9 @@
             {% endif %}
         </div>
     </div>
+{% endblock %} 
+
+{% block scripts %}
+    {{ super() }} {# Include base scripts #}
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> {# Include nav toggle script #}
 {% endblock %} 

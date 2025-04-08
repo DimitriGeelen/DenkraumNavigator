@@ -453,4 +453,117 @@ pre code {
 /* Optional: Add right padding to main container if menu overlaps content */
 /* .container {
     padding-right: 180px; 
-} */ 
+} */
+
+/* === Browse Page Specific Styles === */
+
+/* === Breadcrumb Styles === */
+.breadcrumbs {
+    list-style: none;
+    padding: 10px 0;
+    margin-bottom: 1.5em;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding-left: 15px;
+}
+.breadcrumbs li {
+    display: inline;
+    font-size: 0.95em;
+}
+.breadcrumbs li+li:before {
+    padding: 0 8px;
+    color: #6c757d;
+    content: "/";
+}
+.breadcrumbs li a {
+    color: #007bff;
+    text-decoration: none;
+}
+.breadcrumbs li a:hover {
+    text-decoration: underline;
+}
+.breadcrumbs li.active {
+    color: #6c757d;
+}
+
+/* === File Browser List Styles === */
+.browser-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.browser-list .list-section {
+    margin-bottom: 1.5em;
+}
+
+.browser-list h3 {
+    font-size: 1.1em;
+    color: #495057;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.browser-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.browser-list li {
+    padding: 10px 5px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+.browser-list li:last-child {
+    border-bottom: none;
+}
+.browser-list .item-name {
+    font-weight: 500;
+    word-break: break-all; /* Handle long names */
+    flex-grow: 1; /* Allow name to take up space */
+    margin-right: 15px;
+}
+.browser-list .item-name a:hover {
+    text-decoration: underline;
+}
+.browser-list .item-details {
+    font-size: 0.85em;
+    color: #6c757d;
+    white-space: nowrap; /* Prevent details wrapping */
+    flex-shrink: 0; /* Don't let details shrink */
+    margin-left: 15px;
+}
+ .browser-list .item-details .badge {
+     display: inline-block;
+     padding: 2px 6px;
+     font-size: 0.9em;
+     font-weight: 600;
+     line-height: 1;
+     color: #fff;
+     text-align: center;
+     white-space: nowrap;
+     vertical-align: baseline;
+     border-radius: .25rem;
+     background-color: #6c757d; /* Default badge */
+     margin-right: 5px;
+}
+ .browser-list .item-details .badge-info {
+    background-color: #17a2b8;
+ }
+ .browser-list .item-details .badge-secondary {
+     background-color: #6c757d;
+ }
+ .browser-list .item-actions {
+     white-space: nowrap;
+     flex-shrink: 0; /* Don't let actions shrink */
+     margin-left: auto; /* Push actions to the right */
+     padding-left: 10px; /* Add some space */
+ }
+ .browser-list .btn-link-download {
+     padding: 4px 8px;
+     font-size: 0.85em;
+ } 

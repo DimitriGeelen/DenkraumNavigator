@@ -14,6 +14,7 @@ import re # For parsing git log
 import glob # For globbing file patterns
 import markdown # Import the markdown library
 from logging.handlers import RotatingFileHandler # Import handler
+import ast # <-- Add import for Abstract Syntax Trees
 
 # --- Add Pillow import ---
 from PIL import Image, UnidentifiedImageError
@@ -344,12 +345,21 @@ def index():
     # *** ADD LOGGING HERE ***
     logger.info(f"[Route: /] Value of main_menu being passed to template: {g.main_menu}")
 
+    # Define page sections for floating nav
+    page_nav_items = []
+    page_nav_items.append({'text': 'Filters', 'href': '#filters'})
+    if top_keywords:
+        page_nav_items.append({'text': 'Keywords', 'href': '#keywords'})
+    # Always add results section, even if empty initially
+    page_nav_items.append({'text': 'Results', 'href': '#results'})
+
     # On GET or after POST, render the template with results and previous terms
     return render_template('index.html', results=results,
                            search_terms=search_terms,
                            top_keywords=top_keywords,
                            distinct_types=distinct_types,
-                           distinct_years=distinct_years)
+                           distinct_years=distinct_years,
+                           page_nav_items=page_nav_items) # Pass nav items
 
 @app.route('/download/') # Note the trailing slash
 @app.route('/download/<path:file_path>')
@@ -854,11 +864,19 @@ def browse(sub_path=''):
     if len(breadcrumbs) > 1:
         breadcrumbs[-1]['is_last'] = True 
 
+    # Define page sections for floating nav
+    page_nav_items = []
+    if dirs:
+        page_nav_items.append({'text': 'Directories', 'href': '#directories'})
+    if files:
+        page_nav_items.append({'text': 'Files', 'href': '#files'})
+
     return render_template('browse.html', 
                            current_path=sub_path or '/', 
                            breadcrumbs=breadcrumbs,
                            directories=dirs, 
-                           files=files)
+                           files=files,
+                           page_nav_items=page_nav_items) # Pass nav items
 
 @app.route('/download_code')
 def download_code():
@@ -1082,30 +1100,56 @@ def download_change_notes(commit_hash):
 
 # --- Multi-MD File Editor Page ---
 
+def sanitize_for_id(filename):
+    """Sanitizes a filename to be used as an HTML ID."""
+    # Remove .md extension
+    base = os.path.splitext(filename)[0]
+    # Replace non-alphanumeric characters (except hyphen) with hyphen
+    sanitized = re.sub(r'[^a-zA-Z0-9-]', '-', base)
+    # Remove leading/trailing hyphens and ensure it's not empty
+    sanitized = sanitized.strip('-')
+    return sanitized if sanitized else 'md-file' # Fallback ID
+
 @app.route('/md_files')
 def display_md_files():
     """Displays all root .md files for editing."""
     md_files_data = []
+    page_nav_items = [] # Initialize list for floating nav
     try:
-        # Find all .md files in the project's root directory
-        # Make sure this runs from the project root
         md_filenames = sorted(glob.glob('*.md')) 
         
         for filename in md_filenames:
+            file_id = sanitize_for_id(filename) # Generate ID for the section
             try:
                 with open(filename, 'r', encoding='utf-8') as f:
                     content = f.read()
-                md_files_data.append({'filename': filename, 'content': content})
+                md_files_data.append({
+                    'filename': filename, 
+                    'content': content,
+                    'id': file_id # Add ID to data passed to template
+                })
+                # Add item for the floating navigation menu
+                page_nav_items.append({
+                    'text': filename,
+                    'href': f'#{file_id}' # Link to the section ID
+                })
             except Exception as e:
                 logger.error(f"Error reading {filename}: {e}")
-                md_files_data.append({'filename': filename, 'content': f"# Error reading file: {e}", 'error': True})
+                md_files_data.append({
+                    'filename': filename, 
+                    'content': f"# Error reading file: {e}", 
+                    'error': True,
+                    'id': file_id # Still add ID even on error
+                })
                 
     except Exception as e:
         logger.error(f"Error finding .md files: {e}")
         flash(f"Error finding .md files: {e}", "error")
         # Optionally return an error template or redirect
 
-    return render_template('md_files.html', md_files=md_files_data)
+    return render_template('md_files.html', 
+                           md_files=md_files_data, 
+                           page_nav_items=page_nav_items) # Pass nav items to template
 
 @app.route('/update_md_file', methods=['POST'])
 def update_md_file():
@@ -1191,6 +1235,58 @@ def serve_thumbnail(file_path):
         logger.error(f"Error sending thumbnail file '{thumbnail_path}': {e}")
         abort(500)
 # --- End Thumbnail Route --- 
+
+@app.route('/tests')
+def show_tests():
+    """Displays a list of discovered unit tests with section navigation."""
+    test_data_list = [] # Changed from dict to list of dicts
+    page_nav_items = [] # For floating nav
+    test_dir = 'tests'
+    try:
+        test_files = sorted(glob.glob(os.path.join(test_dir, 'test_*.py')))
+        
+        if not test_files:
+            logger.warning("No test files found matching 'tests/test_*.py'")
+            # Optional: flash a message?
+
+        for test_file_path in test_files:
+            test_filename = os.path.basename(test_file_path)
+            file_id = sanitize_for_id(test_filename) # Generate ID
+            tests_in_file = []
+            error_parsing = False
+            try:
+                with open(test_file_path, 'r', encoding='utf-8') as f: # Ensure encoding
+                    source_code = f.read()
+                    tree = ast.parse(source_code)
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.FunctionDef) and node.name.startswith('test_'):
+                            tests_in_file.append(node.name)
+            except Exception as e:
+                logger.error(f"Error parsing test file {test_filename}: {e}")
+                tests_in_file = ["Error parsing file"] # Indicate error
+                error_parsing = True
+
+            # Add data for the template section
+            test_data_list.append({
+                'filename': test_filename,
+                'tests': tests_in_file,
+                'id': file_id,
+                'error': error_parsing
+            })
+            # Add item for the floating navigation menu
+            page_nav_items.append({
+                'text': test_filename,
+                'href': f'#{file_id}'
+            })
+                
+    except Exception as e:
+        logger.error(f"Error accessing test directory or files: {e}")
+        flash(f"Error retrieving test files: {e}", "error")
+        # test_data_list and page_nav_items will be empty, template handles this
+            
+    return render_template('tests.html', 
+                           test_data=test_data_list, # Pass the list
+                           page_nav_items=page_nav_items) # Pass nav items
 
 if __name__ == '__main__':
     print("Starting Flask web server...")

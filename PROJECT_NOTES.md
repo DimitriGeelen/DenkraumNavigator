@@ -34,8 +34,9 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Web Interface Notes
 
-*   **Navbar:** The top navigation bar items are dynamically generated based on the contents of `menu.md`. Styling is controlled by `static/css/style.css`. See `menu.md` for historical styling notes.
+*   **Navbar:** The top navigation bar items are dynamically generated based on the contents of `menu.md`. Styling is controlled by `static/css/style.css`. See `PAGE_STYLING.md` for detailed styling notes.
 *   **Goals Page:** Project goals are managed in `PROJECT_GOALS.md` and can be edited via the `/goals` page.
+*   **Floating Page Navigation (Sections):** See `PAGE_STYLING.md` for implementation details.
 
 ## Version History Page (`/history`)
 
@@ -63,7 +64,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Design Notes
 
-*(Moved Navbar styling notes to menu.md)*
+*(All styling notes moved to `PAGE_STYLING.md`)*
 
 ## Recent Fixes (2025-04-07)
 
@@ -101,4 +102,3 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 
 
-# Test commit for download link verification.

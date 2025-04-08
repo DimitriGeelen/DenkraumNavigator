@@ -5,6 +5,23 @@
 {% block content %}
     <h2>Edit Root Markdown Files</h2>
 
+    {# Floating Navigation Menu Container (Copied from history.html, modified) #}
+    {% if page_nav_items %}
+    <div class="page-nav-links"> 
+        <div class="page-nav-header">
+            <span>MD Files</span> {# Changed title #}
+            <button id="toggle-page-nav" title="Toggle Navigation">▼</button> 
+        </div>
+        <ul id="page-nav-list"> 
+            <li><a href="#">Top</a></li> {# Link to scroll to top #}
+            {# Dynamically generate links from passed data #}
+            {% for item in page_nav_items %}
+                <li><a href="{{ item.href }}">{{ item.text }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -18,7 +35,7 @@
 
     {% if md_files %}
         {% for file_data in md_files %}
-            <div class="md-editor-section" style="margin-bottom: 30px; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+            <div class="md-editor-section" id="{{ file_data.id }}" style="margin-bottom: 30px; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
                 <h3>{{ file_data.filename }}</h3>
                 
                 {% if file_data.error %}
@@ -43,4 +60,10 @@
     <hr>
     <p><a href="{{ url_for('index') }}">Back to Search</a></p>
 
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Ensure base scripts (like flash message handling) are included #}
+    {# Include the script needed for the floating menu toggle #}
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> 
 {% endblock %} 

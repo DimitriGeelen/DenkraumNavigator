@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Unit Tests - DenkraumNavigator{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Discovered Unit Tests</h1>
+
+        {# Floating Navigation Menu #}
+        {% if page_nav_items %}
+        <div class="page-nav-links"> 
+            <div class="page-nav-header">
+                <span>Test Files</span> {# Changed title #}
+                <button id="toggle-page-nav" title="Toggle Navigation">▼</button> 
+            </div>
+            <ul id="page-nav-list"> 
+                <li><a href="#">Top</a></li> 
+                {% for item in page_nav_items %}
+                    <li><a href="{{ item.href }}">{{ item.text }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if test_data %}
+            {# Loop through list of dicts now #}
+            {% for file_data in test_data %}
+                <div class="test-file-section" id="{{ file_data.id }}"> {# Added ID #}
+                    <h2>{{ file_data.filename }}</h2>
+                    {% if file_data.tests and not file_data.error %}
+                        <ul class="test-list">
+                        {% for test_name in file_data.tests %}
+                            <li>{{ test_name }}</li>
+                        {% else %}
+                             <li>No tests found starting with 'test_'.</li>
+                        {% endfor %}
+                        </ul>
+                    {% elif file_data.error %}
+                        <p style="color: red;">{{ file_data.tests[0] }}</p> {# Show error message #}
+                    {% else %}
+                        <p>No tests found (or error parsing).</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No test files found in the 'tests' directory matching 'test_*.py' or error accessing directory.</p>
+        {% endif %}
+
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Include base scripts #}
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> {# Include nav toggle script #}
+{% endblock %} 

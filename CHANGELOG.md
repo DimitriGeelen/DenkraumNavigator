@@ -102,6 +102,10 @@
 
 ## [Unreleased]
 
+### Added
+- Replicated floating page section navigation from `/history` to `/md_files`.
+- Added documentation for the dynamic floating navigation pattern to `LEARNINGS.md` and `PROJECT_NOTES.md`.
+
 ## [1.2.0] - 2025-04-07
 
 ### Fixed
