@@ -1,4 +1,17 @@
 # Changelog
+## [4.0.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (b545c4a)
+- chore: Update project notes (0724fd2)
+- refactor: Remove redundant clean check from version_bumper.py (850e9d9)
+- test: Create commit to verify download link on history page - integration (9781992)
+- docs: Add AI Assistant Capabilities section (8f6fbb4)
+- test: Create commit to verify download link on history page - integration (ed66c8d)
+- docs: Update commit workflow to recommend safe_version_bump.sh (5191214)
+- feat: Add safe_version_bump.sh wrapper script and update docs (ae9f18d)
+
 ## [3.2.0] - 2025-04-08
 
 ### Changes
