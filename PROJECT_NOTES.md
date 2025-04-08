@@ -99,6 +99,9 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
     - **Option 3:** Filter/group duplicate results in the search UI (`app.py`). (Improves UX, doesn't fix index)
     - **Option 4:** Accept current behavior if duplicate paths are intentional.
 - **Push to Remote:** GitHub push failed due to SSH key permissions.
+- **Test Warnings (Benign):** The test suite (`pytest -v`) shows several warnings after the v4.5.0 update:
+    - `PytestCollectionWarning`: Regarding `test_app` not being a function (expected Flask testing plugin behavior).
+    - `UserWarning: Duplicate name`: In `tests/test_download_routes.py::test_download_code_success`, indicating duplicate file paths (`templates/index.html`, `templates/history.html`) were added during the test's zip creation process. This doesn't cause failure but might indicate slight inefficiency in the test logic.
 
 # Test commit for download link verification.
 # Test commit for download link verification.
@@ -118,6 +121,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 *   **File/Directory Creation:** While direct file creation tools might not always be available or functional, the assistant *can* use the `run_terminal_cmd` tool to execute `mkdir` and `touch` commands to create directories and empty files.
 *   **File Editing:** The assistant can use the `edit_file` tool to add content to existing files (including those just created via the terminal).
+
 
 
 
