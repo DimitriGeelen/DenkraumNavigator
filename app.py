@@ -327,7 +327,23 @@ def index():
     # Perform search if any search term is provided (from POST or GET)
     # Note: search_terms['year'] and ['type'] are now lists
     if any(st for key, st in search_terms.items() if st): # Check for non-empty values/lists
-        results = search_database(filename=filename, years=selected_years, file_types=selected_types, keywords=keywords)
+        results_raw = search_database(filename=filename, years=selected_years, file_types=selected_types, keywords=keywords)
+        # Process results to add relative paths
+        base_dir = os.path.abspath(current_app.config['INDEXED_ROOT_DIR'])
+        results = []
+        for row in results_raw:
+            try:
+                absolute_path = row['path']
+                relative_path = os.path.relpath(absolute_path, base_dir)
+                # Convert row to dict and add relative_path
+                result_dict = dict(row)
+                result_dict['relative_path'] = relative_path
+                results.append(result_dict)
+            except Exception as e:
+                 logger.warning(f"Error calculating relative path for {row.get('path')}: {e}")
+                 # Optionally append the row anyway without relative_path or skip it
+                 # Skipping for safety
+                 continue
     else:
          pass
 
@@ -835,7 +851,8 @@ def browse(sub_path=''):
                                          FROM files WHERE path = ?""", [item_path], one=True)
                 files.append({
                     'name': item,
-                    'path': item_path, # Keep absolute for download link
+                    'path': item_path, # Keep absolute path if needed elsewhere (e.g., for displaying?)
+                    'relative_path': relative_item_path, # <<< ADDED: Pass relative path for url_for
                     'info': file_info # This might be None if not indexed
                 })
         # Sort directories and files alphabetically

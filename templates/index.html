@@ -98,7 +98,7 @@
                     {# Match against full category type names from DB #}
                     {% if result.category_type == 'Image' %}
                         {# Show thumbnail instead of icon for images #}
-                        <img src="{{ url_for('serve_thumbnail', file_path=result.path.lstrip('/')) }}" 
+                        <img src="{{ url_for('serve_thumbnail', file_path=result.relative_path) }}" 
                              alt="Thumbnail for {{ result.filename }}" 
                              class="result-thumbnail">
                     {% elif result.category_type == 'PDF Document' %}
@@ -139,7 +139,7 @@
                     </p>
                 </div>
                 <div class="result-actions">
-                    <a href="{{ url_for('download_file', file_path=result.path.lstrip('/')) }}" 
+                    <a href="{{ url_for('download_file', file_path=result.relative_path) }}" 
                         title="Download {{ result.filename }}" 
                         class="btn-link btn-link-download-db">
                         <i class="fas fa-download"></i> Download
