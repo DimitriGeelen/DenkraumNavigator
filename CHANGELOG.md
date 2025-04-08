@@ -1,5 +1,17 @@
 # Changelog
 
+## [v3.0.0] - YYYY-MM-DD
+
+### Added
+- Add OCR processing for images during indexing (4cdec68)
+- Add thumbnail generation and display for image search results (207d77f)
+
+### Fixed
+- Ensure search works on first attempt by filtering empty select values (f198138)
+
+### Other
+- docs: Add frequent commit practice to DEVELOPMENT_PRACTICES.md (7f21d02)
+
 ## [v2.3.0] - YYYY-MM-DD
 ### Added
 - feat: Add Learnings back to main menu (d66d752)
