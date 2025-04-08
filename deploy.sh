@@ -94,31 +94,48 @@ echo_step "Downloading necessary NLTK data (stopwords, punkt, punkt_tab)"
 sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && $PYTHON_CMD -c \"import nltk; nltk.download(['stopwords', 'punkt', 'punkt_tab'], quiet=True)\""
 echo_info "NLTK 'stopwords', 'punkt', and 'punkt_tab' data downloaded (if needed)."
 
-# --- Extract Database from Zip ---
-echo_step "Extracting database from $DB_ZIP_FILENAME"
-DB_ZIP_PATH="$INSTALL_DIR/$DB_ZIP_FILENAME"
-DB_PATH="$INSTALL_DIR/$DB_FILENAME"
-if [ -f "$DB_ZIP_PATH" ]; then
-    echo_info "Found $DB_ZIP_FILENAME. Extracting $DB_FILENAME..."
-    sudo -u $APP_USER unzip -o "$DB_ZIP_PATH" -d "$INSTALL_DIR" "$DB_FILENAME" 
-    if [ $? -ne 0 ]; then # Check unzip exit status
-        echo "[ERROR] Failed to extract $DB_FILENAME from $DB_ZIP_FILENAME." >&2
-        exit 1
-    fi
-    sudo chown $APP_USER:$APP_USER "$DB_PATH"
-    echo_info "Successfully extracted $DB_FILENAME."
+# --- Extract Database from Zip (Optional) ---
+echo_step "Checking for existing database: $DB_PATH"
+DB_EXISTS=false
+if [ -f "$DB_PATH" ]; then
+    DB_EXISTS=true
+    echo_info "Existing database file found."
 else
-    echo "[ERROR] $DB_ZIP_FILENAME not found in $INSTALL_DIR!" >&2
-    echo "[ERROR] Cannot proceed without the database zip from the repository." >&2
-    exit 1
+    echo_info "No existing database file found at $DB_PATH."
 fi
 
-# --- Verify Database File Presence (Post-Extraction) ---
+RESTORE_DB=""
+if [ -f "$DB_ZIP_PATH" ]; then
+    echo_info "Database archive found: $DB_ZIP_FILENAME"
+    while [[ ! "$RESTORE_DB" =~ ^[YyNn]$ ]]; do
+        read -p "Do you want to restore the database from '$DB_ZIP_FILENAME'? (Y/N): " RESTORE_DB
+    done
+
+    if [[ "$RESTORE_DB" =~ ^[Yy]$ ]]; then
+        echo_info "Attempting to restore database from $DB_ZIP_FILENAME..."
+        sudo -u $APP_USER unzip -o "$DB_ZIP_PATH" -d "$INSTALL_DIR" "$DB_FILENAME" 
+        if [ $? -ne 0 ]; then # Check unzip exit status
+            echo "[ERROR] Failed to extract $DB_FILENAME from $DB_ZIP_FILENAME." >&2
+            exit 1
+        fi
+        sudo chown $APP_USER:$APP_USER "$DB_PATH"
+        echo_info "Successfully extracted $DB_FILENAME."
+        DB_EXISTS=true # Set flag as DB now exists
+    else
+        echo_info "Skipping database restore from zip file."
+    fi
+else
+    echo_warn "$DB_ZIP_FILENAME not found in $INSTALL_DIR. Cannot restore from archive."
+fi
+
+# --- Verify Database File Presence ---
 echo_step "Verifying database file presence"
 if [ -f "$DB_PATH" ]; then
-    echo_info "Database file $DB_FILENAME found in $INSTALL_DIR."
+    echo_info "Database file $DB_FILENAME confirmed present in $INSTALL_DIR."
+elif [[ "$RESTORE_DB" =~ ^[Nn]$ ]]; then
+    echo_warn "Database file $DB_FILENAME NOT found and restore was skipped. Indexing will create a new database."
 else
-    echo "[ERROR] Database file $DB_FILENAME NOT found in $INSTALL_DIR after extraction attempt!" >&2
+    echo "[ERROR] Database file $DB_FILENAME NOT found! Check extraction logs or zip file." >&2
     exit 1
 fi
 
@@ -161,6 +178,17 @@ else
     echo_info "Port ${APP_PORT} appears to be free."
 fi
 
+# --- Run Initial Indexing ---
+echo_step "Running Initial Indexing"
+echo_info "Running ./reindex.sh with target directory: $ARCHIVE_DIR"
+echo_info "This will create the database if it does not exist or update it if it does."
+sudo -u $APP_USER ./reindex.sh "$ARCHIVE_DIR"
+if [ $? -ne 0 ]; then
+    echo "[ERROR] Re-indexing script failed. Check output and logs above." >&2
+    exit 1
+fi
+echo_info "Initial indexing process completed."
+
 # --- Completion ---
 echo_step "Deployment Setup Complete!"
 echo_info "Application installed in: $INSTALL_DIR"
@@ -171,8 +199,5 @@ echo "1. Change directory: cd $INSTALL_DIR"
 echo "2. Run the restart script: ./restart_server.sh"
 echo "   (This will start Gunicorn in the background. See logs in $INSTALL_DIR/gunicorn_*.log)"
 echo "Access the application in your browser (usually http://<server_ip>:${APP_PORT})."
-echo ""
-echo "To manually update the index later (e.g., after adding data to $ARCHIVE_DIR):"
-echo "  cd $INSTALL_DIR && source $VENV_DIR/bin/activate && python indexer.py"
 
 exit 0 

@@ -40,19 +40,31 @@ if [ ! -f "$INDEXER_SCRIPT" ]; then
     exit 1
 fi
 
-# Prompt for the new archive directory path
-read -p "Enter the FULL, absolute path to the archive data directory: " ARCHIVE_PATH
-
-# Basic path validation
-if [ -z "$ARCHIVE_PATH" ]; then
-    echo "[ERROR] Archive path cannot be empty." >&2
-    exit 1
+# --- Determine Archive Path: Argument or Prompt ---
+ARCHIVE_PATH=""
+if [ "$#" -ge 1 ] && [ -d "$1" ]; then
+    # Use the first argument if it's provided and is a directory
+    ARCHIVE_PATH=$(realpath -m "$1") 
+    echo "[INFO] Using archive data directory from argument: $ARCHIVE_PATH"
+elif [ "$#" -ge 1 ]; then
+    echo "[WARN] Argument '$1' provided but is not a valid directory. Prompting for path instead." >&2
 fi
-# Attempt to make path absolute if user enters relative (though prompt asks for absolute)
-ARCHIVE_PATH=$(realpath -m "$ARCHIVE_PATH") 
-if [ ! -d "$ARCHIVE_PATH" ]; then
-    echo "[ERROR] Provided path '$ARCHIVE_PATH' is not a valid directory or does not exist." >&2
-    exit 1
+
+if [ -z "$ARCHIVE_PATH" ]; then
+    # Prompt for the new archive directory path if not provided via argument
+    read -p "Enter the FULL, absolute path to the archive data directory: " ARCHIVE_PATH_INPUT
+    
+    # Basic path validation
+    if [ -z "$ARCHIVE_PATH_INPUT" ]; then
+        echo "[ERROR] Archive path cannot be empty." >&2
+        exit 1
+    fi
+    # Attempt to make path absolute if user enters relative (though prompt asks for absolute)
+    ARCHIVE_PATH=$(realpath -m "$ARCHIVE_PATH_INPUT") 
+    if [ ! -d "$ARCHIVE_PATH" ]; then
+        echo "[ERROR] Provided path '$ARCHIVE_PATH' is not a valid directory or does not exist." >&2
+        exit 1
+    fi
 fi
 
 # --- Add Permission Check --- 
