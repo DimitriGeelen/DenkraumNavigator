@@ -125,7 +125,9 @@
                     {% endif %}
                 </div>
                 <div class="result-details">
-                    <p><strong>Path:</strong> {{ result.path }}</p>
+                    {# Display filename prominently #}
+                    <p><strong>File:</strong> <span class="filename">{{ result.filename }}</span></p> 
+                    <p><small><strong>Path:</strong> {{ result.path }}</small></p> {# Make path smaller #}
                     <p><strong>Type:</strong> {{ result.category_type }} | <strong>Year:</strong> {{ result.category_year }}</p>
                     <p><strong>Keywords:</strong> {{ result.keywords or 'N/A' }}</p>
                     <p><strong>Extract / Summary:</strong> 

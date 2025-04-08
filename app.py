@@ -64,23 +64,90 @@ app.config.setdefault('BACKUP_DIR', 'backups')
 app.config.setdefault('THUMBNAIL_CACHE_DIR', 'thumbnail_cache')
 app.config.setdefault('THUMBNAIL_SIZE', (100, 100)) # Width, Height
 
+# --- Menu Parsing --- 
+MENU_FILE = 'menu.md'
+
+def parse_menu_file(filepath):
+    """Parses the menu.md file into a list of menu items.
+       Expected format: - Text: endpoint_name (# Optional comment)"""
+    menu_items = []
+    logger.debug(f"Attempting to parse menu file: {filepath}")
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f):
+                original_line = line.strip()
+                # Skip empty lines and comments
+                if not original_line or original_line.startswith('#'):
+                    continue
+                # Check for the correct format: starts with '-', contains ':'
+                if original_line.startswith('-') and ':' in original_line:
+                    try:
+                        # Remove leading '-' and split at the first ':'
+                        content = original_line[1:].strip()
+                        text, endpoint_raw = content.split(':', 1)
+                        text = text.strip()
+                        # Strip endpoint and remove potential inline comments
+                        endpoint = endpoint_raw.split('#', 1)[0].strip()
+                        
+                        if text and endpoint:
+                            item = {'text': text, 'endpoint': endpoint}
+                            menu_items.append(item)
+                            logger.debug(f"  -> Parsed item: {item} from line: '{original_line}'")
+                        else:
+                             logger.warning(f"Ignoring menu line with empty text or endpoint after parsing: '{original_line}'")
+                    except ValueError:
+                         logger.warning(f"Could not split menu line correctly (expected 'Text: endpoint'): '{original_line}'")
+                else:
+                     # Log lines that don't start with '-' or don't contain ':' unless they are comments/empty
+                     logger.warning(f"Ignoring menu line (doesn't match format ' - Text: endpoint'): '{original_line}'") # Changed to warning
+    except FileNotFoundError:
+        logger.error(f"Menu file not found: {filepath}. Returning empty menu.")
+    except Exception as e:
+        logger.error(f"Error reading menu file {filepath}: {e}. Returning empty menu.")
+    logger.debug(f"Finished parsing menu file. Items loaded: {menu_items}")
+    return menu_items
+
+# Load menu globally at startup
+main_menu = parse_menu_file(MENU_FILE)
+app.logger.info(f"Main menu loaded at startup: {len(main_menu)} items")
+
+@app.before_request
+def before_request():
+    # Ensure backup dir exists
+    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    # Add main_menu to the request context g, generating URLs here
+    g.main_menu = []
+    for item in main_menu: # Use the globally loaded raw menu data
+        try:
+            # Generate URL within the app context
+            url = url_for(item['endpoint'])
+            g.main_menu.append({'text': item['text'], 'url': url})
+        except Exception as e:
+            logger.error(f"Error generating URL for endpoint '{item.get('endpoint')}': {e}")
+            # Optionally skip this item or add a placeholder
+            # g.main_menu.append({'text': item.get('text', 'Error'), 'url': '#'})
+    logger.debug(f"Menu with URLs generated for request: {g.main_menu}")
+# --- End Menu Parsing ---
+
 # --- Database Handling ---
-DATABASE_PATH = app.config['DATABASE'] # Store for convenience
 
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
     db = getattr(g, '_database', None)
     if db is None:
-        if not os.path.exists(current_app.config['DATABASE']):
-             # In a real app, handle this more gracefully, maybe redirect to an error page
-             raise FileNotFoundError(f"Database file '{current_app.config['DATABASE']}' not found. Run indexer first.")
-        db = g._database = sqlite3.connect(current_app.config['DATABASE'])
+        db_path = current_app.config['DATABASE'] # Use config from current app context
+        if not os.path.exists(db_path):
+             logger.error(f"Database file '{db_path}' not found. Run indexer first.")
+             raise FileNotFoundError(f"Database file '{db_path}' not found. Run indexer first.")
+        logger.debug(f"Connecting to database: {db_path}") # Add log for debugging
+        db = g._database = sqlite3.connect(db_path)
         db.row_factory = sqlite3.Row # Return rows as dictionary-like objects
     return db
 
 @app.teardown_appcontext
 def close_connection(exception):
-    """Closes the database connection at the end of the request."""
+    """Closes the database again at the end of the request."""
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
