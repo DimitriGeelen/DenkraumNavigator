@@ -88,6 +88,14 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 ## Open Issues / Assumptions
 
 - **Navbar Rendering (Goals link):** The 'Goals' link sometimes fails to render in the main application (port 5000), showing only 3 menu items. Extensive testing on a minimal server (port 5001) confirmed the menu data, Jinja loop logic, CSS, and `url_for` calls are correct. The main app server also shows frequent 'Killed' messages in logs when run with `debug=True`. **Assumption:** The main app is likely crashing during template rendering (specifically during the loop for the 4th item) due to resource exhaustion (memory/CPU), preventing the final item from being rendered.
+- **Thumbnail Test Failures (Skipped):** 5 tests in `tests/test_thumbnail_route.py` are skipped due to persistent mocking/path issues. Patching `os.path.exists` (via decorator or context manager) does not reliably intercept calls made within the route handler. Debugging needed to identify root cause (Flask/mock interaction, path resolution in test env).
+- **Duplicate Index Entries:** Search results can show multiple hits for the same filename (e.g., `denkenohnegelaender_logo.eps`) because the source data directory (`/dol-data-archive2`) contains redundant copies of files in different subdirectories. The indexer correctly indexes each unique *path*. 
+    - **Option 1 (Recommended):** Clean up the source data directory to remove redundant file copies.
+    - **Option 2:** Modify indexer for content-based deduplication (e.g., using file hashes). (More complex)
+    - **Option 3:** Filter/group duplicate results in the search UI (`app.py`). (Improves UX, doesn't fix index)
+    - **Option 4:** Accept current behavior if duplicate paths are intentional.
+- **Push to Remote:** GitHub push failed due to SSH key permissions.
+
 # Test commit for download link verification.
 # Test commit for download link verification.
 # Test commit for download link verification.
@@ -140,4 +148,3 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 
 
-# Test commit for download link verification.

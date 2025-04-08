@@ -2,7 +2,6 @@
 
 # Deployment script for DenkraumNavigator on a new Debian/Ubuntu server
 # Assumes script is run with sudo privileges or by root
-# REPLICATES environment using EXISTING database (user must copy it).
 
 set -e # Exit immediately if a command exits with a non-zero status.
 set -u # Treat unset variables as an error.
@@ -16,10 +15,15 @@ DB_FILENAME="file_index.db" # Name of the database file
 PYTHON_CMD="python3" # Command to run python
 VENV_DIR=".venv" # Name of the virtual environment directory
 DB_ZIP_FILENAME="file_index.zip" # Name of the database zip file
+APP_PORT="5000" # Port the application runs on
 
 # --- Helper Functions ---
 echo_info() {
     echo "[INFO] $1"
+}
+
+echo_warn() {
+    echo "[WARN] $1"
 }
 
 echo_step() {
@@ -35,10 +39,11 @@ if [[ $EUID -eq 0 ]]; then
        exit 1
    fi
 else
-    echo_info "Script running as user $(whoami). Ensure you have sudo privileges if needed for apt."
+    echo_info "Script running as user $(whoami). Ensure you have sudo privileges if needed for apt/ufw."
     # Check if sudo is available if not root
     if ! command -v sudo &> /dev/null; then
-        echo "[WARNING] sudo command not found. apt commands might fail if run as non-root." >&2
+        echo "[ERROR] sudo command not found. This script requires sudo privileges." >&2
+        exit 1
     fi
 fi
 
@@ -46,15 +51,14 @@ fi
 
 echo_step "Updating package lists and installing dependencies"
 sudo apt-get update
-sudo apt-get install -y git $PYTHON_CMD ${PYTHON_CMD}-venv unzip # Added unzip
-echo_info "Dependencies installed: git, python3, python3-venv, unzip"
+sudo apt-get install -y git $PYTHON_CMD ${PYTHON_CMD}-venv unzip ufw # Added ufw
+echo_info "Dependencies installed: git, python3, python3-venv, unzip, ufw"
 
 echo_step "Cloning/Updating repository from $REPO_URL"
 if [ -d "$INSTALL_DIR/.git" ]; then
     echo_info "Directory $INSTALL_DIR exists. Pulling latest changes..."
     cd $INSTALL_DIR
-    # Stash local changes, pull, pop stash (handle potential conflicts manually later if needed)
-    sudo -u $APP_USER git stash || echo_info "No local changes to stash."
+    sudo -u $APP_USER git stash push -m "deploy.sh stash $(date +%s)" || echo_info "No local changes to stash."
     sudo -u $APP_USER git pull origin master # Or your default branch
     sudo -u $APP_USER git stash pop || echo_info "No stash to pop."
     cd -
@@ -71,37 +75,45 @@ echo_info "Ownership set."
 cd $INSTALL_DIR
 echo_info "Changed directory to $INSTALL_DIR"
 
-echo_step "Setting up Python virtual environment in $VENV_DIR"
-sudo -u $APP_USER $PYTHON_CMD -m venv $VENV_DIR
-echo_info "Virtual environment created/updated."
+# --- Python Virtual Environment Setup --- 
+echo_step "Setting up Python virtual environment in $VENV_DIR (if needed)"
+if [ ! -d "$VENV_DIR" ]; then
+    echo_info "No virtual environment found, creating one..."
+    sudo -u $APP_USER $PYTHON_CMD -m venv $VENV_DIR
+    echo_info "Virtual environment created."
+else
+    echo_info "Virtual environment '$VENV_DIR' already exists."
+fi
 
-echo_step "Activating virtual environment and installing/updating Python packages"
+echo_step "Installing/Updating Python packages from requirements.txt"
 sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
-echo_info "Python packages installed/updated from requirements.txt"
+echo_info "Python packages installed/updated."
 
 # --- Extract Database from Zip ---
-echo_step "Extracting database from $DB_ZIP_FILENAME (if exists)"
+echo_step "Extracting database from $DB_ZIP_FILENAME"
 DB_ZIP_PATH="$INSTALL_DIR/$DB_ZIP_FILENAME"
 DB_PATH="$INSTALL_DIR/$DB_FILENAME"
 if [ -f "$DB_ZIP_PATH" ]; then
     echo_info "Found $DB_ZIP_FILENAME. Extracting $DB_FILENAME..."
-    # Run unzip as the app user, overwrite existing file (-o), extract to install dir (-d)
     sudo -u $APP_USER unzip -o "$DB_ZIP_PATH" -d "$INSTALL_DIR" "$DB_FILENAME" 
     if [ $? -ne 0 ]; then # Check unzip exit status
         echo "[ERROR] Failed to extract $DB_FILENAME from $DB_ZIP_FILENAME." >&2
         exit 1
     fi
-    if [ ! -f "$DB_PATH" ]; then # Verify extraction
-        echo "[ERROR] $DB_FILENAME not found after attempting extraction from $DB_ZIP_FILENAME." >&2
-        exit 1
-    fi
-    # Set ownership just in case
     sudo chown $APP_USER:$APP_USER "$DB_PATH"
     echo_info "Successfully extracted $DB_FILENAME."
 else
     echo "[ERROR] $DB_ZIP_FILENAME not found in $INSTALL_DIR!" >&2
-    echo "[ERROR] This deployment method requires the zipped database to be present in the repository." >&2
-    echo "[ERROR] Please ensure the version you are deploying was tagged correctly using the updated version bumper." >&2
+    echo "[ERROR] Cannot proceed without the database zip from the repository." >&2
+    exit 1
+fi
+
+# --- Verify Database File Presence (Post-Extraction) ---
+echo_step "Verifying database file presence"
+if [ -f "$DB_PATH" ]; then
+    echo_info "Database file $DB_FILENAME found in $INSTALL_DIR."
+else
+    echo "[ERROR] Database file $DB_FILENAME NOT found in $INSTALL_DIR after extraction attempt!" >&2
     exit 1
 fi
 
@@ -113,41 +125,47 @@ echo_step "Setting execute permissions for scripts"
 sudo -u $APP_USER chmod +x *.sh version_bumper.py || echo "[WARNING] No .sh/version_bumper.py files found to set permissions on."
 echo_info "Set execute permissions for .sh and version_bumper.py files (if found)."
 
-# --- Manual Step Reminder --- MODIFIED PROMPT ---
+# --- Configure Firewall --- 
+echo_step "Configuring Firewall (ufw)"
+if sudo ufw status | grep -qw inactive; then
+    echo_warn "ufw is inactive. Enabling firewall and allowing SSH (default port 22)."
+    sudo ufw allow ssh
+    sudo ufw enable
+fi
+sudo ufw allow ${APP_PORT}/tcp comment "DenkraumNavigator App Port"
+echo_info "Firewall rule added to allow TCP traffic on port ${APP_PORT}."
+
+# --- Manual Step Reminder (ARCHIVE DATA ONLY) --- 
 echo_step "Manual Actions Required"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-echo "!! Before proceeding, you MUST manually copy the following from your SOURCE !!"
-echo "!! environment to this TARGET server:                                       !!"
-echo "!!                                                                          !!"
-echo "!! 1. The **Archive Data** into the directory:                              !!"
+echo "!! Before starting the server, you MUST manually copy the                   !!"
+echo "!! ARCHIVE DATA into the directory:                                       !!"
 echo "!!    $ARCHIVE_DIR                                                              !!"
-echo "!!                                                                          !!"
-echo "!! 2. The **EXISTING Database File** ($DB_FILENAME) into the application directory: !!"
-echo "!!    $INSTALL_DIR/$DB_FILENAME                                            !!"
 echo "!!                                                                          !!"
 echo "!! (Optional) You may also copy the contents of the 'backups/' directory    !!"
 echo "!! from the source to '$INSTALL_DIR/backups/'.                                !!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-read -p "Press [Enter] key ONLY after you have copied the Archive Data AND the Database File..." REPLY
+read -p "Press [Enter] key ONLY after you have copied the Archive Data..." REPLY
 
-# --- Verify Database File (This step is less critical now but good sanity check) ---
-echo_step "Verifying database file presence"
-if [ -f "$DB_PATH" ]; then
-    echo_info "Database file $DB_FILENAME found in $INSTALL_DIR."
+
+# --- Check Port Availability --- 
+echo_step "Checking if port ${APP_PORT} is in use"
+if ss -tlpn | grep -q ":${APP_PORT}\b"; then 
+    echo_warn "Port ${APP_PORT} appears to be in use. The restart script or manual start might fail if the service doesn't stop properly."
 else
-    echo "[ERROR] Database file $DB_FILENAME NOT found in $INSTALL_DIR after extraction attempt!" >&2
-    exit 1
+    echo_info "Port ${APP_PORT} appears to be free."
 fi
 
 # --- Completion ---
 echo_step "Deployment Setup Complete!"
-echo_info "Database extracted from $DB_ZIP_FILENAME: $DB_PATH (Expected name: $DB_FILENAME)"
-echo_info "To start the application server:"
+echo_info "Application installed in: $INSTALL_DIR"
+echo_info "Database extracted from $DB_ZIP_FILENAME: $DB_PATH"
+echo_info "Firewall configured to allow port ${APP_PORT}/tcp."
+echo_info "To start the application server using Gunicorn:"
 echo "1. Change directory: cd $INSTALL_DIR"
-echo "2. Activate environment: source $VENV_DIR/bin/activate"
-echo "3. Run the server: python app.py"
-echo "   (Alternatively, use ./restart_server.sh)"
-echo "Access the application in your browser (usually http://<server_ip>:5000)."
+echo "2. Run the restart script: ./restart_server.sh"
+echo "   (This will start Gunicorn in the background. See logs in $INSTALL_DIR/gunicorn_*.log)"
+echo "Access the application in your browser (usually http://<server_ip>:${APP_PORT})."
 echo ""
 echo "To manually update the index later (e.g., after adding data to $ARCHIVE_DIR):"
 echo "  cd $INSTALL_DIR && source $VENV_DIR/bin/activate && python indexer.py"

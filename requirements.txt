@@ -24,4 +24,4 @@ pytest-flask
 pytest-mock # For mocking in tests
 
 # Versioning Helper
-semver 
+semver
