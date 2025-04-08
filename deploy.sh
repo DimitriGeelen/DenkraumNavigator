@@ -95,7 +95,10 @@ sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && $PYTHON_CMD -c \"imp
 echo_info "NLTK 'stopwords', 'punkt', and 'punkt_tab' data downloaded (if needed)."
 
 # --- Extract Database from Zip (Optional) ---
-echo_step "Checking for existing database: $DB_PATH"
+echo_step "Checking for existing database: $DB_FILENAME"
+DB_ZIP_PATH="$INSTALL_DIR/$DB_ZIP_FILENAME" # Define Zip path here
+DB_PATH="$INSTALL_DIR/$DB_FILENAME"       # Define DB path here BEFORE use
+
 DB_EXISTS=false
 if [ -f "$DB_PATH" ]; then
     DB_EXISTS=true
