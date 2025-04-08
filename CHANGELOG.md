@@ -1,4 +1,18 @@
 # Changelog
+## [4.5.0] - 2025-04-08
+
+### Changes
+
+- feat: Add /config-check route for diagnostics (7144e67)
+- docs: Add DEPLOYMENT_NOTES.md with setup and maintenance info (8b809c3)
+- refactor: Improve permission check/warning in reindex.sh (8f72cf1)
+- feat: Add permission checks to reindex.sh (868ee16)
+- feat: Add reindex.sh script for manual re-indexing (22114f0)
+- test: Update expected menu in menu parsing tests (a727984)
+- test: Create commit to verify download link on history page - integration (2fcb419)
+- test: Create commit to verify download link on history page - integration (cc6106f)
+- feat: Re-add configuration page for viewing/overriding archive path (f389d90)
+
 ## [4.4.0] - 2025-04-08
 
 ### Changes
