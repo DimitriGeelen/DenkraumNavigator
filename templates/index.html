@@ -78,8 +78,9 @@
             <h3>Keyword Cloud</h3>
             {% if top_keywords %}
                 {% for keyword in top_keywords %}
-                    <a href="{{ url_for('index', keywords=keyword.text) }}" title="{{ keyword.weight }} files">
-                        {{ keyword.text }}
+                    {# Access tuple elements by index: [0] is text, [1] is count #}
+                    <a href="{{ url_for('index', keywords=keyword[0]) }}" title="{{ keyword[1] }} files">
+                        {{ keyword[0] }}
                     </a>
                 {% endfor %}
             {% else %}
