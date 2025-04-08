@@ -18,8 +18,9 @@ VALID_MENU_CONTENT = """
 - Browse: browse
 - History & Backups: history
 # - Goals: display_project_goals # Old entry - Make sure this line is actually removed or commented in the test data
-- Learnings: display_learnings
+# - Learnings: display_learnings # Removed
 - MD Files: display_md_files
+- Unit Tests: show_tests # Added
 """
 
 # Menu content with comments and blank lines
@@ -48,8 +49,8 @@ EXPECTED_VALID_MENU = [
     {'text': 'Search', 'endpoint': 'index'},
     {'text': 'Browse', 'endpoint': 'browse'},
     {'text': 'History & Backups', 'endpoint': 'history'},
-    {'text': 'Learnings', 'endpoint': 'display_learnings'},
-    {'text': 'MD Files', 'endpoint': 'display_md_files'}
+    {'text': 'MD Files', 'endpoint': 'display_md_files'},
+    {'text': 'Unit Tests', 'endpoint': 'show_tests'}
 ]
 
 # Expected result for MIXED_MENU_CONTENT
@@ -107,4 +108,4 @@ def test_app_main_menu_loaded():
     # Assuming the current menu.md is the same as VALID_MENU_CONTENT used above
     # You might want to read the actual menu.md here for a more robust test
     assert main_menu == EXPECTED_VALID_MENU
-    assert len(main_menu) == 5 # Check the current count 
+    assert len(main_menu) == 5 # Adjusted expected count 
