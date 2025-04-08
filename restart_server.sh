@@ -15,10 +15,26 @@ APP_MODULE="app:app" # Gunicorn format: module_name:flask_app_instance
 ACCESS_LOG="$PROJECT_ROOT/gunicorn_access.log"
 ERROR_LOG="$PROJECT_ROOT/gunicorn_error.log"
 PID_FILE="$PROJECT_ROOT/gunicorn.pid"
-BIND_ADDR="0.0.0.0:5000"
+PORT="5000" # Define the port
 WORKERS=2 # Adjust as needed (e.g., based on CPU cores)
 
 echo "Executing reliable server restart procedure (using Gunicorn)..."
+
+# --- Dynamically Detect LAN IP --- 
+echo "Step 0: Detecting LAN IP address..."
+# Get the first global scope IPv4 address, excluding 127.0.0.1
+LAN_IP=$(ip -4 addr show scope global | grep 'inet' | awk '{print $2}' | cut -d/ -f1 | head -n 1)
+
+if [ -z "$LAN_IP" ]; then
+    echo "ERROR: Could not automatically detect a suitable LAN IP address." >&2
+    echo "Please check network configuration or manually set BIND_ADDR in the script." >&2
+    exit 1
+fi
+echo "Detected LAN IP: $LAN_IP"
+BIND_ADDR="${LAN_IP}:${PORT}"
+echo "Gunicorn will bind to: $BIND_ADDR"
+# --- End IP Detection ---
+
 
 # 1. Check if PID file exists and process is running
 echo "Step 1: Checking for existing Gunicorn process (PID file: $PID_FILE)..."
@@ -47,10 +63,17 @@ if [ -f "$PID_FILE" ]; then
     fi
     rm -f "$PID_FILE"
 else
-    echo "No PID file found. Attempting to kill any Gunicorn processes listening on $BIND_ADDR..."
+    echo "No PID file found. Attempting to kill any Gunicorn processes listening on port ${PORT}..."
     # Fallback: Try killing by port/process name (less reliable)
-    pkill -f "gunicorn.*${BIND_ADDR}" || echo "No running Gunicorn processes found listening on ${BIND_ADDR} or pkill failed."
-    sleep 1
+    # Updated pkill pattern to be more specific to the port
+    PIDS_TO_KILL=$(ss -tlpn 'sport = :'"$PORT" | grep gunicorn | awk '{print $7}' | sed -E 's/.*pid=([0-9]+).*/\1/')
+    if [ -n "$PIDS_TO_KILL" ]; then
+        echo "Found Gunicorn processes listening on port ${PORT}: $PIDS_TO_KILL. Killing..."
+        kill $PIDS_TO_KILL || echo "Kill command failed (processes might already be gone)."
+        sleep 1
+    else
+        echo "No running Gunicorn processes found listening on port ${PORT}."
+    fi
 fi
 
 
@@ -80,7 +103,7 @@ ulimit -m 8388608
 
 echo "Starting Gunicorn..."
 # Gunicorn options:
-# --bind: Address and port
+# --bind: Address and port (Now uses dynamic $BIND_ADDR)
 # --workers: Number of worker processes
 # --timeout: Worker timeout
 # --log-level: Logging level (info, debug, etc.)
@@ -106,7 +129,7 @@ sleep 2 # Give Gunicorn a moment to start and write PID file
 if [ -f "$PID_FILE" ]; then
     NEW_PID=$(cat "$PID_FILE")
     if ps -p $NEW_PID > /dev/null; then
-        echo "Gunicorn server started successfully (PID: $NEW_PID). Check logs for details:"
+        echo "Gunicorn server started successfully (PID: $NEW_PID), bound to $BIND_ADDR. Check logs for details:"
         echo "  Access Log: $ACCESS_LOG"
         echo "  Error Log:  $ERROR_LOG"
         echo "\n--------------------------- Last 10 lines of $ERROR_LOG ---------------------------"
