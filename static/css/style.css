@@ -371,4 +371,86 @@ pre code {
     height: auto;
     border: 1px solid #ccc;
     object-fit: cover; /* Scale while maintaining aspect ratio */
-} 
+}
+
+/* Floating Page Navigation Menu (e.g., for History page) */
+.page-nav-links { /* Now the main container */
+    position: fixed; /* Keep it in place while scrolling */
+    top: 20px;      /* Moved closer to the top */
+    right: 20px;
+    background-color: #f8f9fa; /* Light background */
+    border: 1px solid #dee2e6;  /* Light border */
+    border-radius: 5px;
+    padding: 0; /* Padding now handled by header/list */
+    list-style: none; /* Remove bullet points */
+    margin: 0;
+    z-index: 1000; /* Ensure it stays on top */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+    min-width: 180px; /* Slightly wider perhaps */
+}
+
+.page-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #e9ecef; /* Header background */
+    border-bottom: 1px solid #dee2e6;
+    cursor: default; /* Indicate it's not clickable itself */
+    border-top-left-radius: 5px; /* Match container */
+    border-top-right-radius: 5px;
+}
+
+.page-nav-header span {
+    font-weight: bold;
+    color: #495057;
+}
+
+#toggle-page-nav {
+    background: none;
+    border: none;
+    font-size: 1.1em;
+    cursor: pointer;
+    padding: 0 5px;
+    color: #6c757d;
+    line-height: 1; /* Ensure consistent alignment */
+}
+
+#toggle-page-nav:hover {
+    color: #343a40;
+}
+
+#page-nav-list { /* The actual list */
+    padding: 10px; /* Padding for the list items */
+    margin: 0;
+    list-style: none;
+    /* display: none; */ /* Initial state handled by JS now */
+}
+
+/* Keep existing list item and link styles, maybe adjust padding */
+.page-nav-links li { /* Selector still works */
+    margin-bottom: 5px; /* Space between links */
+}
+
+.page-nav-links li:last-child {
+    margin-bottom: 0; /* No margin for the last item */
+}
+
+.page-nav-links li a {
+    display: block; /* Make the whole area clickable */
+    padding: 5px 8px; /* Slightly adjusted padding */
+    color: #007bff; /* Link color */
+    text-decoration: none;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.page-nav-links li a:hover {
+    background-color: #e9ecef; /* Light grey hover effect */
+    text-decoration: none;
+}
+
+/* Optional: Add right padding to main container if menu overlaps content */
+/* .container {
+    padding-right: 180px; 
+} */ 

@@ -8,6 +8,20 @@
     <div class="container">
         <h1>Version History & Backups</h1>
 
+        {# Floating Navigation Menu Container #}
+        <div class="page-nav-links"> {# Renamed from ul to div container #}
+            <div class="page-nav-header">
+                <span>Page Sections</span>
+                <button id="toggle-page-nav" title="Toggle Navigation">▼</button> {# Simple toggle button #}
+            </div>
+            <ul id="page-nav-list"> {# Added ID to the list itself #}
+                <li><a href="#version-tags">Version Tags</a></li>
+                <li><a href="#recent-commits">Recent Commits</a></li>
+                <li><a href="#manual-backups">Manual Backups</a></li>
+                <li><a href="#workflow-notes">Workflow Notes</a></li>
+            </ul>
+        </div>
+
         {# Add Download Code button here #}
         <div style="text-align: center; margin-bottom: 25px;">
             <a href="{{ url_for('download_code') }}" 
@@ -22,7 +36,7 @@
 
         {# Flash Messages - Moved to base.html #}
 
-        <h2>Version Tags</h2>
+        <h2 id="version-tags">Version Tags</h2>
         {% if tag_details %}
             <ul class="content-list">
             {% for tag in tag_details %}
@@ -49,7 +63,7 @@
         <p>No version tags found.</p>
         {% endif %}
 
-        <h2>Recent Commits</h2>
+        <h2 id="recent-commits">Recent Commits</h2>
         {% if commits %}
         <ul class="content-list">
             {% for commit in commits %}
@@ -90,7 +104,7 @@
         <p>No commit details found or error retrieving commits.</p>
         {% endif %}
 
-        <h2>Manual Database Backups</h2>
+        <h2 id="manual-backups">Manual Database Backups</h2>
         <form method="post" action="{{ url_for('backup_now') }}" style="display: inline-block; margin-bottom: 1em;">
             <button type="submit" class="btn-link btn-link-create-backup">Create New Manual Database Backup Now</button>
         </form>
@@ -116,9 +130,14 @@
         <p>No manual database backups found.</p>
         {% endif %}
 
-        <h2>Commit & Versioning Workflow Notes</h2>
+        <h2 id="workflow-notes">Commit & Versioning Workflow Notes</h2>
         <div class="workflow-notes">
              {{ workflow_notes_html|safe }}
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Include scripts from base template #}
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script> {# Add link to our new JS file #}
 {% endblock %} 

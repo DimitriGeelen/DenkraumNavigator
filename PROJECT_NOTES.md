@@ -93,4 +93,8 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 # Test commit for download link verification.
 # Test commit for download link verification.
 
-# Test commit for download link verification.
+## AI Assistant Capabilities
+
+*   **File/Directory Creation:** While direct file creation tools might not always be available or functional, the assistant *can* use the `run_terminal_cmd` tool to execute `mkdir` and `touch` commands to create directories and empty files.
+*   **File Editing:** The assistant can use the `edit_file` tool to add content to existing files (including those just created via the terminal).
+
