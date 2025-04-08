@@ -3,290 +3,90 @@
 {% block title %}Version History - DenkraumNavigator{% endblock %}
 
 {% block content %}
-    {# Link to external CSS or include shared styles if preferred #}
-    <style>
-        /* === Global Styles (Consider moving to a shared CSS file) === */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height: 1.5;
-            margin: 0;
-            background-color: #f8f9fa;
-            color: #343a40;
-            font-size: 0.95rem;
-        }
-        /* === Navbar Styles (Match index.html) === */
-        .navbar {
-            background-color: #343a40;
-            padding: 10px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .navbar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            justify-content: flex-end;
-        }
-        .navbar li {
-            margin-left: 15px;
-        }
-        .navbar a {
-            color: #f8f9fa; 
-            background-color: transparent; 
-            text-decoration: none; 
-            padding: 8px 15px; /* Restore reasonable padding */
-            margin: 0;
-            border-radius: 0; 
-            border: none; 
-            transition: background-color 0.2s ease; /* Restore transition */
-        }
-        .navbar a:hover {
-            background-color: #495057; 
-            color: #fff;
-            text-decoration: underline; /* Keep underline on hover for now */
-        }
-        /* --- Temporarily commenting out from here down to isolate parsing error --- */
-        /* --- Other styles from history.html (container, headings, buttons, lists) --- */
-
-        .container {
-            max-width: 1100px;
-            margin: 20px auto;
-            background: #ffffff; /* White background for content */
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        h1, h2 {
-            color: #212529;
-            text-align: center;
-            margin-bottom: 1.2em;
-        }
-        h1 {
-            font-size: 2.2em;
-            font-weight: 600;
-        }
-        h2 {
-            font-size: 1.6em;
-            font-weight: 500;
-            margin-top: 1.5em;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 0.4em;
-            text-align: left; /* Keep section headers left-aligned */
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-        hr {
-             border: none;
-             border-top: 1px solid #dee2e6;
-             margin: 25px 0;
-        }
-        p {
-             margin-bottom: 0.8em;
-        }
-        .btn-link {
-            display: inline-block;
-            padding: 4px 8px;
-            font-size: 0.9em;
-            font-weight: 500;
-            color: #fff;
-            background-color: #6c757d;
-            border: 1px solid #6c757d;
-            border-radius: 4px;
-            text-align: center;
-            vertical-align: middle;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-            margin: 2px;
-        }
-        .btn-link:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
-            color: #fff;
-            text-decoration: none;
-        }
-        /* --- Temporarily commenting out below --- */
-
-        .btn-link-download-db, .btn-link-download-code, .btn-link-download-package {
-             background-color: #17a2b8;
-             border-color: #17a2b8;
-        }
-        .btn-link-download-db:hover, .btn-link-download-code:hover, .btn-link-download-package:hover {
-             background-color: #138496;
-             border-color: #117a8b;
-        }
-        .btn-link-restore {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-        .btn-link-restore:hover {
-            background-color: #c82333;
-            border-color: #bd2130; 
-        }
-         .btn-link-reset {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-         .btn-link-reset:hover {
-            background-color: #218838;
-            border-color: #1e7e34;
-        }
-        /* List Styles */
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        /* Explicitly style navbar list items */
-        .navbar li {
-            margin-left: 15px; /* Keep original spacing */
-            padding: 0; /* Ensure no extra padding */
-            border: none; /* Ensure no border */
-            background: none; /* Ensure no background */
-            display: list-item; /* Override potential flex inheritance */
-            /* Remove properties that might cause boxiness */
-            border-radius: 0;
-            flex-wrap: nowrap;
-            align-items: initial; 
-        }
-        /* Add style specifically for list items within content lists */
-        .content-list li {
-            background: #f8f9fa; /* Apply background only here */
-            border: 1px solid #e9ecef;
-            border-radius: 4px;
-            padding: 10px 15px; /* Add padding needed for content */
-            margin-bottom: 6px; /* Add margin needed for content */
-            font-family: monospace; /* Add font needed for content */
-            font-size: 0.9em; /* Add font size needed for content */
-            display: flex; /* Add display flex needed for content */
-            flex-wrap: wrap; /* Add wrap needed for content */
-            justify-content: space-between; /* Add justify needed for content */
-            align-items: center; /* Add align needed for content */
-        }
-        li span { 
-            margin-right: 10px; 
-            word-break: break-word; 
-            flex-grow: 1; /* Allow text span to grow */
-        }
-         li .details { /* Sub-details within list item */
-             font-size: 0.9em;
-             color: #6c757d;
-             flex-basis: 100%; /* Take full width on wrap */
-         }
-        li div.actions { /* Container for buttons */
-            white-space: nowrap; 
-            flex-shrink: 0; /* Prevent buttons shrinking */
-        }
-         li .btn-link { /* Adjust button size in lists */
-             padding: 3px 6px;
-             font-size: 0.85em;
-             margin: 0 0 0 5px; 
-         }
-         /* form[style*="display: inline"] { 
-             margin: 0;
-             padding: 0;
-         } */
-        /* Workflow Notes */
-        .workflow-notes {
-            background-color: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 0.9em;
-            margin-top: 20px;
-        }
-        .workflow-notes h3 {
-            margin-top: 0;
-            font-size: 1.2em;
-            border-bottom: 1px solid #ced4da;
-            padding-bottom: 0.3em;
-        }
-        .workflow-notes ol {
-            padding-left: 20px;
-            margin-bottom: 0;
-        }
-        .workflow-notes li {
-            background: none;
-            padding: 2px 0;
-            margin-bottom: 4px;
-            border: none;
-            font-family: inherit;
-            font-size: 1em;
-            display: list-item; 
-        }
-    </style>
+    {# Removed inline <style> block - Styles moved to static/css/style.css #}
 
     <div class="container">
         <h1>Version History & Backups</h1>
+
+        {# Add Download Code button here #}
+        <div style="text-align: center; margin-bottom: 25px;">
+            <a href="{{ url_for('download_code') }}" 
+               class="btn-link btn-link-download-code" 
+               style="padding: 8px 15px; font-size: 1em;" {# Slightly larger style #}
+               title="Download a zip archive of the current application source code.">
+                Download Current Code
+            </a>
+            {# Consider adding Download Package button here too if desired #}
+            {# <a href="{{ url_for('download_package') }}" class="btn-link btn-link-download-package" style="padding: 8px 15px; font-size: 1em;">Download Current Package (Code + DB)</a> #}
+                    </div>
 
         {# Flash Messages - Moved to base.html #}
 
         <h2>Version Tags</h2>
         {% if tag_details %}
-        <ul class="content-list">
+            <ul class="content-list">
             {% for tag in tag_details %}
-            <li>
+                <li>
                 <span>
                     <strong>{{ tag.name }}</strong> (Commit: {{ tag.hash }}, Date: {{ tag.date }})
                     <br><small class="details">{{ tag.subject }}</small>
+                    {% if tag.release_notes %}
+                        <div class="release-notes-summary">{{ tag.release_notes | safe }}</div>
+                    {% endif %}
                 </span>
-                <div class="actions">
-                     {# Add Download Change Notes button for Tags #}
-                     <a href="{{ url_for('download_change_notes', commit_hash=tag.hash) }}"
-                        class="btn-link"
-                        title="Download change notes (commit message) for {{ tag.name }} ({{ tag.hash }})">
-                         Download Notes
-                     </a>
-                     {# Existing Download Package Button #}
+                    <div class="actions">
+                     {# Add download link only if package exists? Currently relies on commit lookup #}
                      <a href="{{ url_for('download_commit_package', commit_hash=tag.hash) }}" 
                         class="btn-link btn-link-download-package" 
-                        title="Download package for {{ tag.name }} ({{ tag.hash }})">
+                        title="Download package for tag {{ tag.name }} (commit {{ tag.hash }})">
                          Download Package
                      </a>
-                </div>
-            </li>
+                    </div>
+                </li>
             {% endfor %}
-        </ul>
+            </ul>
         {% else %}
         <p>No version tags found.</p>
         {% endif %}
 
         <h2>Recent Commits</h2>
-        {% if commit_details %}
+        {% if commits %}
         <ul class="content-list">
-            {% for commit in commit_details %}
+            {% for commit in commits %}
             <li>
                 <span>
-                    <strong>{{ commit.hash }}</strong> ({{ commit.date.split('T')[0] }} {{ commit.date.split('T')[1].split('+')[0] }})
-                    {% if commit.tags %}<span class="tag-highlight">[{{ commit.tags }}]</span>{% endif %}
-                    <br><small class="details">{{ commit.subject }}</small>
+                    <strong>{{ commit.hash[:7] }}</strong> {# Show short hash #}
+                     ({{ commit.date.split(' ')[0] }}) {# Show only date part #}
+                    {% if commit.tags %}
+                        {% for tag in commit.tags %}
+                            <span class="tag-highlight">[{{ tag }}]</span>
+                        {% endfor %}
+                    {% endif %}
+                    <br>
+                    {# Display release notes if available, otherwise subject #}
+                    {% if commit.release_notes %}
+                        {# Keep the small tag structure, just render HTML safely inside #}
+                        <small class="details commit-message release-notes-summary">{{ commit.release_notes|safe }}</small>
+                    {% else %}
+                        {# Original display for normal commits #}
+                        <small class="details commit-message">{{ commit.subject }}</small>
+                    {% endif %}
                 </span>
-                <div class="actions">
-                    {# Download Change Notes Button #}
-                    <a href="{{ url_for('download_change_notes', commit_hash=commit.hash) }}"
-                       class="btn-link" {# Use default btn-link style for now #}
-                       title="Download change notes (commit message) for {{ commit.hash }}">
-                        Download Notes
-                    </a>
-                    
-                    {# Existing Download Package Button #}
-                    {% if commit.backups_exist %}
+                    <div class="actions">
+                    {# Existing Download Package Button - check correct keys #}
+                    {% if commit.has_db_backup and commit.has_zip_backup %}
                         <a href="{{ url_for('download_commit_package', commit_hash=commit.hash) }}" 
                            class="btn-link btn-link-download-package" 
                            title="Download backup package for commit {{ commit.hash }}">
                             Download Package
                         </a>
-                    {% else %}
-                        <span class="btn-link btn-link-disabled" title="Backup files not found for this commit">Package Unavailable</span>
-                    {% endif %}
-                </div>
-            </li>
+                         {% else %}
+                        <span class="btn-link btn-link-disabled" title="Backup files (DB or ZIP) not found for this commit">Package Unavailable</span>
+                         {% endif %}
+                    </div>
+                </li>
             {% endfor %}
-        </ul>
+            </ul>
         {% else %}
         <p>No commit details found or error retrieving commits.</p>
         {% endif %}
@@ -296,11 +96,11 @@
             <button type="submit" class="btn-link btn-link-create-backup">Create New Manual Database Backup Now</button>
         </form>
         {% if manual_db_backups %}
-        <ul class="content-list">
+            <ul class="content-list">
             {% for backup in manual_db_backups %}
-            <li>
+                <li>
                 <span>{{ backup }}</span>
-                <div class="actions">
+                    <div class="actions">
                     <a href="{{ url_for('download_backup', filename=backup) }}" 
                        class="btn-link btn-link-download-db" 
                        title="Download {{ backup }}">
@@ -308,19 +108,18 @@
                     </a>
                     <form method="post" action="{{ url_for('restore_backup', filename=backup) }}" style="display: inline; margin: 0; padding: 0;" onsubmit="return confirm('Are you sure you want to restore the database from this backup? The current database will be overwritten!');">
                         <button type="submit" class="btn-link btn-link-restore" title="Restore from {{ backup }}">Restore DB</button>
-                    </form>
-                </div>
-            </li>
+                        </form>
+                    </div>
+                </li>
             {% endfor %}
-        </ul>
+            </ul>
         {% else %}
         <p>No manual database backups found.</p>
         {% endif %}
 
         <h2>Commit & Versioning Workflow Notes</h2>
         <div class="workflow-notes">
-             Please refer to <a href="{{ url_for('static', filename='COMMIT_VERSIONING_CHANGELOG.md') }}">COMMIT_VERSIONING_CHANGELOG.md</a> for details.
-             <p><strong>Summary:</strong> Commit changes -> (Manual/Scripted) Bump Version/Changelog -> (Manual/Scripted) Tag.</p>
+             {{ workflow_notes_html|safe }}
         </div>
     </div>
 {% endblock %} 

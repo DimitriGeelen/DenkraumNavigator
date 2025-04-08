@@ -478,37 +478,65 @@ def restore_backup(filename):
     return redirect(url_for('history'))
 
 def get_tag_details():
-    """Gets details for each Git tag (name, commit hash, date, subject)."""
-    tags = []
+    """Fetches details for version tags (vX.Y.Z)."""
+    logger.info("Fetching version tag details.")
+    # Format: tagname<|>commit_hash<|>date_iso<|>subject
+    # Use %(refname:short) for tag name
+    format_string = "%(refname:short)¦%(objectname:short)¦%(creatordate:iso8601)¦%(contents:subject)"
+    cmd = ['git', 'tag', '-l', 'v*', f'--format={format_string}', '--sort=-creatordate']
+    logger.debug(f"Running git command: {' '.join(cmd)}")
+
     try:
-        # Format: tagname<SEP>commithash<SEP>commitdate(iso8601)<SEP>subject
-        # Use a unique separator like <||> unlikely to be in subject
-        sep = "<||>"
-        # List tags, dereference to get commit info, sort by version descending
-        cmd = [
-            'git', 'tag', '-l', 'v*', '--sort=-v:refname', 
-            f'--format=%(refname:short){sep}%(objectname:short){sep}%(committerdate:iso8601){sep}%(subject)'
-        ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True, encoding='utf-8')
-        
-        for line in result.stdout.strip().split('\n'):
-            if not line:
-                continue
-            parts = line.split(sep, 3)
-            if len(parts) == 4:
-                tag_name, commit_hash, date_str, subject = parts
-                tags.append({
-                    'name': tag_name,
-                    'hash': commit_hash,
-                    'date': date_str.split(' ')[0], # Just get YYYY-MM-DD
-                    'subject': subject
-                })
+        output = result.stdout.strip()
+        logger.debug(f"Raw git tag output: {output}")
     except FileNotFoundError:
-        logger.error("'git' command not found when trying to get tag details.")
+        logger.error("Git command not found. Is Git installed and in PATH?")
+        return []
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error running git tag command: {e.stderr}")
+        logger.error(f"Git tag command failed: {e}")
+        logger.error(f"Git error output: {e.stderr}")
+        return []
     except Exception as e:
-        logger.error(f"An unexpected error occurred retrieving tag details: {e}")
+         logger.error(f"An unexpected error occurred running git tag: {e}")
+         return []
+
+    tags = []
+    if not output:
+        logger.warning("Git tag output was empty.")
+        return []
+
+    # --- Ensure splitting by lines --- 
+    lines = output.strip().splitlines() # Use splitlines() for robust splitting
+    # --------------------------------
+    logger.debug(f"Processing {len(lines)} lines from git tag output.") # Add log
+
+    for i, line in enumerate(lines):
+        parts = line.strip().split('¦', 3)
+        if len(parts) == 4:
+            tag_name, commit_hash, commit_date, subject = parts
+            
+            # --- Add Version Parsing and Changelog Fetch --- 
+            version_tag_parsed = None
+            release_notes_html = None
+            version_match = re.match(r'^v?(\d+\.\d+\.\d+)$', tag_name)
+            if version_match:
+                version_tag_parsed = version_match.group(1) # Extract X.Y.Z
+                logger.debug(f"[get_tag_details] Found version {version_tag_parsed} in tag '{tag_name}'. Fetching notes.")
+                release_notes_html = get_changelog_notes(version_tag_parsed)
+            # ---------------------------------------------
+
+            tags.append({
+                'name': tag_name,
+                'hash': commit_hash,
+                'date': commit_date.split('T')[0], # Just date part
+                'subject': subject,
+                'release_notes': release_notes_html # Add the fetched notes
+            })
+        else:
+            logger.warning(f"Could not parse git tag line {i+1}: '{line}'. Expected 4 parts separated by '¦', got {len(parts)}.")
+
+    logger.info(f"Finished processing tag details. Found {len(tags)} tags.")
     return tags
 
 @app.route('/download_commit_package/<commit_hash>')
@@ -568,93 +596,202 @@ def download_commit_package(commit_hash):
         logger.error(f"Error creating package zip for commit {commit_hash}: {e}")
         abort(500)
 
-def get_commit_details(limit=50):
-    """Gets details for the most recent commits, including associated tags and backup status."""
-    commits = []
-    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
-    # Format: hash<|>date_iso<|>subject<|>tag_refs
-    # %d gives ref names like (HEAD -> master, tag: v0.1.0)
-    format_string = "%h<|>%cI<|>%s<|>%d"
+def get_changelog_notes(version):
+    """Reads CHANGELOG.md, finds notes for a version, and returns as HTML."""
+    logger.debug(f"[get_changelog_notes] Attempting to get notes for version: '{version}'") # Log exact input
+    filepath = 'CHANGELOG.md'
     try:
-        # Git log command to get details for the last 'limit' commits
-        command = ["git", "log", f"--pretty=format:{format_string}", f"-n{limit}"]
-        result = subprocess.run(command, capture_output=True, text=True, check=True, encoding='utf-8')
-        lines = result.stdout.strip().split('\n')
+        with open(filepath, 'r', encoding='utf-8') as f:
+            changelog_content = f.read()
+            logger.debug(f"[get_changelog_notes] Read {len(changelog_content)} chars from {filepath}. Starts with: {changelog_content[:100]}...") # Log snippet
 
-        for line in lines:
-            if not line:
-                continue
-            parts = line.split('<|>', 3)
-            if len(parts) == 4:
-                commit_hash, commit_date, subject, refs = parts
-                # Extract tags from refs
-                # Refs look like: (HEAD -> master, tag: v0.1.0, origin/master)
-                tags = re.findall(r'tag: ([^,\)]+)', refs)
-                tag_string = ", ".join(tags) if tags else ""
+        # Regex to find the version section and capture content until the next heading or EOF
+        # Made more robust to whitespace variations
+        # pattern_str = rf"^## \\[v?{re.escape(str(version))}\\].*?\\n(.*?)(?=\\n## |\\Z)" # Old pattern
+        pattern_str = rf"^##.*?\[v?{re.escape(str(version))}\].*?\n\s*(.*?)(?=\n\s*## |\Z)" # New pattern: Added .*?, \s* after \n, and \s* in lookahead
+        logger.debug(f"[get_changelog_notes] Using regex pattern: {pattern_str}")
+        pattern = re.compile(pattern_str, re.DOTALL | re.MULTILINE | re.IGNORECASE)
+        match = pattern.search(changelog_content)
 
-                # Check for backup file existence
-                logger.debug(f"Checking backups for commit {commit_hash} in dir {backup_dir}") # Log dir
-                db_backup_pattern = os.path.join(backup_dir, f"commit_{commit_hash}*.db")
-                code_backup_pattern = os.path.join(backup_dir, f"commit_{commit_hash}*.zip")
-                logger.debug(f"DB Pattern: {db_backup_pattern}") # Log pattern
-                logger.debug(f"Code Pattern: {code_backup_pattern}") # Log pattern
-                db_backup_files = glob.glob(db_backup_pattern)
-                code_backup_files = glob.glob(code_backup_pattern)
-                logger.debug(f"Glob result for DB: {db_backup_files}") # Log result
-                logger.debug(f"Glob result for Code: {code_backup_files}") # Log result
-                db_exists = bool(db_backup_files)
-                code_exists = bool(code_backup_files)
-                backups_exist = db_exists and code_exists
-                logger.debug(f"Setting backups_exist for {commit_hash}: {backups_exist}") # Log flag
-
-                commits.append({
-                    'hash': commit_hash,
-                    'date': commit_date,
-                    'subject': subject,
-                    'tags': tag_string,
-                    'backups_exist': backups_exist
-                })
+        if match:
+            notes_markdown = match.group(1).strip()
+            logger.debug(f"[get_changelog_notes] Regex matched! Extracted markdown (first 100 chars): {notes_markdown[:100]}...")
+            if notes_markdown:
+                html_notes = markdown.markdown(notes_markdown)
+                logger.debug(f"[get_changelog_notes] Successfully rendered notes for {version}.")
+                return f'<div class=\"changelog-notes\">{html_notes}</div>'
             else:
-                 logger.warning(f"Could not parse git log line: {line}")
+                logger.warning(f"[get_changelog_notes] Found section for {version} but no notes content after stripping.")
+                return None
+        else:
+            logger.warning(f"[get_changelog_notes] Regex did NOT match for version: {version}")
+            return None
+    except FileNotFoundError:
+        logger.error(f"[get_changelog_notes] {filepath} not found.")
+        return None
+    except Exception as e:
+        logger.error(f"[get_changelog_notes] Error processing {filepath} for version {version}: {e}")
+        return None
 
+def get_commit_details(limit=50):
+    """Fetches detailed commit history including tags and checks for backups."""
+    logger.info(f"Fetching commit details (limit: {limit}).")
+    # Use short hash %h for backup matching, full hash %H for uniqueness if needed elsewhere
+    # Use '|' as separator, include decorations (%d) for tags/branches
+    # Format: short_hash¦full_hash¦date¦subject¦author¦decorations
+    format_string = f"--pretty=format:%h¦%H¦%ad¦%s¦%an¦%d"
+
+    date_format = "--date=format:%Y-%m-%d %H:%M:%S"
+    cmd = ['git', 'log', f'--max-count={limit}', date_format, format_string]
+    logger.debug(f"Running git command: {' '.join(cmd)}")
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True, encoding='utf-8')
+        output = result.stdout.strip()
+        logger.debug(f"Raw git log output (first 200 chars): {output[:200]}")
     except FileNotFoundError:
         logger.error("Git command not found. Is Git installed and in PATH?")
         return []
     except subprocess.CalledProcessError as e:
         logger.error(f"Git log command failed: {e}")
-        logger.error(f"Git stderr: {e.stderr}")
+        logger.error(f"Git error output: {e.stderr}")
         return []
     except Exception as e:
-        logger.error(f"Error processing git log for commits: {e}")
+         logger.error(f"An unexpected error occurred running git log: {e}")
+         return []
+
+    commits = []
+    if not output:
+        logger.warning("Git log output was empty.")
         return []
+
+    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
+
+    lines = output.split('\n')
+    logger.debug(f"Processing {len(lines)} lines from git log.")
+
+    for i, line in enumerate(lines):
+        parts = line.strip().split('¦', 5) # Split by '¦' up to 5 times now
+        if len(parts) == 6:
+            short_hash, full_hash, commit_date, subject, author, decorations = parts
+            tags = []
+            version_tag = None
+            # Parse decorations for tags
+            if decorations:
+                # Remove parentheses if present
+                clean_decorations = decorations.strip().strip('()')
+                decoration_parts = [d.strip() for d in clean_decorations.split(',')]
+                for part in decoration_parts:
+                    if part.startswith('tag: '):
+                        tag_name = part.replace('tag: ', '').strip()
+                        tags.append(tag_name)
+                        # Check if it's a version tag (e.g., v1.2.3 or 1.2.3)
+                        if re.match(r'^v?(\d+\.\d+\.\d+)$', tag_name):
+                           if version_tag is None: # Only take the first version tag found
+                               version_match = re.match(r'^v?(\d+\.\d+\.\d+)$', tag_name)
+                               version_tag = version_match.group(1) # Extract X.Y.Z part
+                               logger.debug(f"Found version tag {tag_name} (parsed as {version_tag}) for commit {short_hash}")
+
+            # --- Use short_hash for backup check ---
+            backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
+            # Use short_hash here
+            db_backup_pattern = os.path.join(backup_dir, f"commit_{short_hash}.db")
+            zip_backup_pattern = os.path.join(backup_dir, f"commit_{short_hash}.zip")
+            logger.debug(f"[get_commit_details] Checking backups for {short_hash} ({full_hash}) in '{backup_dir}'") # Log both
+            logger.debug(f"[get_commit_details]  DB pattern: '{db_backup_pattern}'")
+            logger.debug(f"[get_commit_details]  ZIP pattern: '{zip_backup_pattern}'")
+
+            db_glob_result = glob.glob(db_backup_pattern)
+            zip_glob_result = glob.glob(zip_backup_pattern)
+            logger.debug(f"[get_commit_details]  DB glob result: {db_glob_result}")
+            logger.debug(f"[get_commit_details]  ZIP glob result: {zip_glob_result}")
+
+            db_backup_exists = bool(db_glob_result)
+            zip_backup_exists = bool(zip_glob_result)
+            logger.debug(f"[get_commit_details]  => DB exists: {db_backup_exists}, ZIP exists: {zip_backup_exists}")
+
+            # Fetch changelog notes if it's a version commit
+            release_notes_html = None
+            if version_tag:
+                # --- Add Log ---
+                logger.debug(f"[get_commit_details] Commit {short_hash} has version tag '{version_tag}'. Calling get_changelog_notes.")
+                # -------------
+                release_notes_html = get_changelog_notes(version_tag)
+
+            commits.append({
+                'hash': short_hash, # Use short hash for display/links now
+                'full_hash': full_hash, # Keep full hash if needed
+                'date': commit_date,
+                'subject': subject,
+                'author': author,
+                'tags': tags,
+                'version': version_tag,
+                'has_db_backup': db_backup_exists,
+                'has_zip_backup': zip_backup_exists,
+                'release_notes': release_notes_html
+            })
+        else:
+            logger.warning(f"Could not parse git log line {i+1}: '{line}'. Expected 6 parts separated by '¦', got {len(parts)}.")
+
+
+    logger.info(f"Finished processing commit details. Found {len(commits)} commits.")
+    # logger.debug(f"Example commit data (first one): {commits[0] if commits else 'None'}")
     return commits
 
 @app.route('/history')
 def history():
-    """Displays version history, tags, backups, and commit log."""
-    backup_dir = current_app.config['BACKUP_DIR'] # Use config
-    # Ensure backup directory exists
-    os.makedirs(backup_dir, exist_ok=True)
+    """Displays the commit history, version tags, and backups."""
+    logger.info("Accessing /history route.")
 
-    # Get Tag Details
+    # Fetch commit details (already includes release notes where applicable)
+    commits_data = get_commit_details(limit=100)
+    if commits_data is None:
+        logger.error("Failed to get commit details for /history.")
+        flash('Error retrieving commit history.', 'error')
+        commits_data = []
+
+    # Fetch tag details (restore this)
     tag_details = get_tag_details()
+    if tag_details is None:
+        logger.error("Failed to get tag details for /history.")
+        flash('Error retrieving version tag history.', 'error')
+        tag_details = []
 
-    # Get Commit Details (New Function)
-    commit_details = get_commit_details(limit=50) # Get last 50 commits
+    # Fetch manual backup list (restore this)
+    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
+    manual_db_backups = []
+    try:
+        if os.path.exists(backup_dir):
+             # Correctly indented list comprehension
+             manual_db_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('file_index_') and f.endswith('.db')], reverse=True)
+             logger.debug(f"Found manual backups: {manual_db_backups}")
+        else:
+            logger.warning(f"Manual backup directory not found: {backup_dir}")
+    except Exception as e:
+        logger.error(f"Error listing manual backups in {backup_dir}: {e}")
+        flash('Error retrieving manual backups.', 'error')
+        manual_db_backups = [] # Ensure it's defined even on error
 
-    # Get lists of backup files (Manual only now)
-    manual_db_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('file_index_') and f.endswith('.db')], reverse=True)
-    # Remove the old commit backup file lists
-    # commit_db_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('db_commit_') and f.endswith('.db')], reverse=True)
-    # commit_code_backups = sorted([f for f in os.listdir(backup_dir) if f.startswith('code_commit_') and f.endswith('.zip')], reverse=True)
+    # Fetch and render COMMIT_VERSIONING_CHANGELOG.md content
+    workflow_notes_html = ""
+    try:
+        with open('COMMIT_VERSIONING_CHANGELOG.md', 'r', encoding='utf-8') as f:
+            md_content = f.read()
+        workflow_notes_html = markdown.markdown(md_content)
+        logger.debug("Successfully read and rendered COMMIT_VERSIONING_CHANGELOG.md")
+    except FileNotFoundError:
+        logger.warning("COMMIT_VERSIONING_CHANGELOG.md not found.")
+        workflow_notes_html = "<p><em>COMMIT_VERSIONING_CHANGELOG.md not found.</em></p>"
+    except Exception as e:
+        logger.error(f"Error reading or rendering COMMIT_VERSIONING_CHANGELOG.md: {e}")
+        workflow_notes_html = f"<p><em>Error loading workflow notes: {e}</em></p>"
 
-    return render_template('history.html', 
+    # Pass all necessary data to the template
+    return render_template('history.html',
+                           commits=commits_data,
                            tag_details=tag_details,
-                           commit_details=commit_details, # Pass commit details
-                           manual_db_backups=manual_db_backups)
-                           # Remove old backup lists
-                           # commit_db_backups=commit_db_backups,
-                           # commit_code_backups=commit_code_backups)
+                           manual_db_backups=manual_db_backups,
+                           workflow_notes_html=workflow_notes_html) # Add workflow notes
 
 @app.route('/browse/')
 @app.route('/browse/<path:sub_path>')
