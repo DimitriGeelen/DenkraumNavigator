@@ -6,6 +6,12 @@ This file consolidates notes related to CSS, layout, and visual styling for the 
 
 *   Global styles are primarily defined in `static/css/style.css`.
 
+## Adding New Pages
+
+*   **Main Navigation:** When adding a new page that should be accessible from the main site navigation, you MUST update `menu.md` by adding a new line in the format `- Link Text: flask_endpoint_name`.
+*   **Top Navbar Inclusion:** Ensure the new page's template inherits from `base.html` (or directly includes the navbar component, like `{% include '_navbar.html' %}` if not inheriting) so that the standard top navigation bar is displayed.
+*   **Floating Section Navigation:** If the new page contains distinct sections that would benefit from the floating navigation menu (similar to the `/history` or `/md_files` pages), follow the pattern described in the "Floating Page Navigation (Sections)" section below (generating IDs in the backend, passing nav items to the template, etc.).
+
 ## Navbar Styling
 
 *   The top navigation bar is dynamically generated based on `menu.md` and styled via `static/css/style.css`.
