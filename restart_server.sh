@@ -44,6 +44,10 @@ if [ -f "$GUNICORN" ]; then
     echo "Setting resident memory ulimit to 8GB..."
     ulimit -m 8388608
     
+    # Set the environment variable for the archive directory
+    export DENKRAUM_ARCHIVE_DIR="/opt/dol-data-archive2"
+    echo "Setting DENKRAUM_ARCHIVE_DIR to $DENKRAUM_ARCHIVE_DIR"
+    
     # Use nohup for backgrounding + redirect stdout/stderr to log file
     # Gunicorn options:
     # --bind: Address and port to listen on

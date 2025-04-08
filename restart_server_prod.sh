@@ -134,6 +134,11 @@ echo "Starting Gunicorn..."
 # --error-logfile: Path for error logs
 # --pid: Path to store PID file
 # --daemon: Run in the background
+
+# <<< ADDED: Set the environment variable for the archive directory >>>
+export DENKRAUM_ARCHIVE_DIR="/opt/dol-data-archive2"
+echo "Setting DENKRAUM_ARCHIVE_DIR to $DENKRAUM_ARCHIVE_DIR"
+
 "$GUNICORN" --bind "$BIND_ADDR" \
             --workers "$WORKERS" \
             --timeout 60 \

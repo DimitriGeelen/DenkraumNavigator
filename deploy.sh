@@ -10,7 +10,7 @@ set -u # Treat unset variables as an error.
 REPO_URL="https://github.com/DimitriGeelen/DenkraumNavigator.git"
 INSTALL_DIR="/opt/DenkraumNavigator" # Directory to clone the repo into
 APP_USER=$(logname) # Use the user who logged in (avoids root if sudo is used)
-ARCHIVE_DIR="/dol-data-archive2" # Location where user must place archive files
+ARCHIVE_DIR="/opt/dol-data-archive2" # Location where user must place archive files
 DB_FILENAME="file_index.db" # Name of the database file
 PYTHON_CMD="python3" # Command to run python
 VENV_DIR=".venv" # Name of the virtual environment directory
@@ -183,6 +183,21 @@ fi
 
 # --- Run Initial Indexing ---
 echo_step "Running Initial Indexing"
+
+# --- DEBUGGING: Check ARCHIVE_DIR before calling reindex.sh ---
+echo_info "[DEBUG] Checking status of ARCHIVE_DIR ('$ARCHIVE_DIR') for user '$APP_USER' before calling reindex.sh..."
+if [ ! -d "$ARCHIVE_DIR" ]; then
+    echo_warn "[DEBUG] ARCHIVE_DIR '$ARCHIVE_DIR' does not exist or is not a directory!"
+fi
+# Check permissions specifically for the target user
+if sudo -u "$APP_USER" test -r "$ARCHIVE_DIR" && sudo -u "$APP_USER" test -x "$ARCHIVE_DIR"; then
+    echo_info "[DEBUG] User '$APP_USER' appears to have read/execute permissions for '$ARCHIVE_DIR'."
+else
+    echo_warn "[DEBUG] User '$APP_USER' might NOT have read/execute permissions for '$ARCHIVE_DIR'. ls -ld output:"
+    ls -ld "$ARCHIVE_DIR" || echo "[DEBUG] Could not run ls -ld on '$ARCHIVE_DIR'"
+fi
+# --- END DEBUGGING ---
+
 echo_info "Running ./reindex.sh with target directory: $ARCHIVE_DIR"
 echo_info "This will create the database if it does not exist or update it if it does."
 sudo -u $APP_USER ./reindex.sh "$ARCHIVE_DIR"
