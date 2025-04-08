@@ -11,7 +11,8 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 *   Repository Name: `DenkraumNavigator`
 *   Tracking Agreements: Using this `PROJECT_NOTES.md` file.
 *   Linting: Added `flake8` and `ruff`, fixed initial issues.
-*   Backup Strategy: Primarily automatic via `post-commit` hook; manual DB backup retained.
+*   Backup Strategy: Primarily automatic via `post-commit` hook. Hook creates DB/Code backups in `backups/` AND copies DB backup back to root `file_index.db`.
+*   Database Versioning: `file_index.db` (ignored by Git) is zipped into `file_index.zip` by `version_bumper.py` and committed along with version bump commits (minor/major). Deployment script extracts `file_index.db` from this zip.
 
 ## Development Practices
 
@@ -31,6 +32,13 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 *   Handling CSS linting errors in `history.html` comments (currently ignored).
 *   Pushing local Git repo to a remote (GitHub push failed due to SSH key permissions).
+*   **Improve Test Coverage:** While basic functionality is tested, consider adding more targeted tests for:
+    *   **Download Routes:** Explicitly test `/download_file`, `/download_backup`, `/download_code_backup`, `/download_code`, `/download_package` for success and error cases (e.g., file not found, path traversal attempts).
+    *   **Browse Route (`/browse/`):** Verify correct directory/file listing and breadcrumb generation for different paths.
+    *   **Markdown Editing Routes:** Test loading content and saving updates for `/goals`, `/learnings`, `/md_files`.
+    *   **Thumbnail Generation (`/thumbnail/`):** Test thumbnail creation, caching, and serving for various image types and error conditions.
+    *   **History Page Content (`/history`):** Assert specific commit/tag details are rendered correctly.
+    *   **Search Edge Cases:** Test `search_database` with more complex queries or empty results.
 
 ## Web Interface Notes
 
@@ -107,4 +115,3 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 
 
-# Test commit for download link verification.
