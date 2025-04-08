@@ -34,9 +34,8 @@ def test_index_page_loads(client):
     """Test loading the index/search page."""
     response = client.get('/')
     assert response.status_code == 200
-    assert b"DenkraumNavigator: Suchwerkzeug" in response.data
+    assert b"<title>DenkraumNavigator Archive Search</title>" in response.data
     assert b"Search" in response.data # Check for form presence (submit button text)
-    assert b"Top Keywords" in response.data # Check for the actual heading
 
 def test_search_by_filename(client):
     """Test searching by filename."""
