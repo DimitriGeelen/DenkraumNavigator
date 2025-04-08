@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Check</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .status-ok {
+            color: green;
+            font-weight: bold;
+        }
+        .status-error {
+            color: red;
+            font-weight: bold;
+        }
+        .status-na {
+            color: grey;
+        }
+    </style>
+</head>
+<body>
+    <h1>Configuration Check</h1>
+    <p>This page displays the configuration paths used by the application for diagnostic purposes.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Configuration Item</th>
+                <th>Value</th>
+                <th>Status / Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>INDEXED_ROOT_DIR (from app.config)</td>
+                <td>{{ config_info.get('INDEXED_ROOT_DIR_Config', 'Not Set') }}</td>
+                <td>
+                    {% if config_info.get('INDEXED_ROOT_DIR_Exists') is not none %}
+                        {% if config_info.get('INDEXED_ROOT_DIR_Exists') %}
+                            <span class="status-ok">Exists</span>
+                        {% else %}
+                            <span class="status-error">Does Not Exist</span>
+                        {% endif %}
+                        <br>
+                        {% if config_info.get('INDEXED_ROOT_DIR_Readable') %}
+                            <span class="status-ok">Readable</span>
+                        {% else %}
+                            <span class="status-error">Not Readable</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="status-na">Check Not Performed (Path not set)</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>DENKRAUM_ARCHIVE_DIR (from environment)</td>
+                <td>{{ config_info.get('DENKRAUM_ARCHIVE_DIR_Env', 'Not Set') }}</td>
+                <td>Environment variable used to potentially set INDEXED_ROOT_DIR.</td>
+            </tr>
+            <tr>
+                <td>DATABASE (from app.config)</td>
+                <td>{{ config_info.get('DATABASE_Config', 'Not Set') }}</td>
+                <td>Path to the application's database file.</td>
+            </tr>
+            <tr>
+                <td>Application Root Path</td>
+                <td>{{ config_info.get('APP_ROOT_PATH', 'Not Set') }}</td>
+                <td>The root directory of the Flask application.</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html> 

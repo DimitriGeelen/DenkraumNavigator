@@ -248,44 +248,21 @@ def get_top_keywords(limit=50):
             row_count += 1
             if row['keywords']:
                 keywords = row['keywords'].split(',')
-                keyword_counts.update(kw.strip() for kw in keywords if kw.strip())
-            # Optional: Add logging every N rows to see progress
-            # if row_count % 1000 == 0:
-            #     logger.debug(f"[get_top_keywords] Processed {row_count} rows...")
-
-        logger.debug(f"[get_top_keywords] Finished processing {row_count} rows.")
-
+                # Increment count for each keyword
+                for keyword in keywords:
+                    clean_keyword = keyword.strip().lower() # Normalize
+                    if clean_keyword:
+                        keyword_counts[clean_keyword] += 1
+        logger.debug(f"[get_top_keywords] Processed {row_count} rows.")
     except sqlite3.Error as e:
-        logger.error(f"[get_top_keywords] Database error: {e}")
-        return [] # Return empty on error
+        logger.error(f"[get_top_keywords] Database error while fetching keywords: {e}")
     finally:
-        cur.close()
-        # Don't close the connection here, let teardown handle it
-
-    top_keywords = keyword_counts.most_common(limit)
-    logger.debug(f"[get_top_keywords] Top {limit} raw keyword counts (first 5): {top_keywords[:5]}")
-
-    # Add scaling factor for font size (optional, adjust as needed)
-    if top_keywords:
-        # Apply log scaling to prevent huge differences, avoid log(0 or 1)
-        log_min = 1 # To avoid log(0)
-        log_max = math.log(top_keywords[0][1] + log_min) if top_keywords else 1 # Avoid error on empty
-        log_range = log_max - math.log(top_keywords[-1][1] + log_min) if len(top_keywords) > 1 and top_keywords[-1][1] > 0 else 1 # Avoid div by zero or log(0)
-        log_range = max(log_range, 1) # Ensure range is at least 1
-        
-        final_keywords = []
-        for kw, count in top_keywords:
-            if log_range > 0:
-                # Scale font size from, say, 1 (min) to 4 (max) relative units
-                font_scale = 1 + 3 * (math.log(count + log_min) - log_min) / log_range 
-            else:
-                font_scale = 2 # Default size if all counts are the same
-            final_keywords.append({'text': kw, 'weight': count, 'font_scale': font_scale})
-        # print(f"DEBUG [get_top_keywords]: Final scaled keywords (first 5): {final_keywords[:5]}") # Debug
-        return final_keywords
-    else:
-        print("DEBUG [get_top_keywords]: No top keywords found after counting.") # Debug
-        return []
+        if cur:
+            cur.close() # Ensure cursor is closed
+    # Get the top N keywords
+    most_common = keyword_counts.most_common(limit)
+    logger.debug(f"[get_top_keywords] Top {limit} keywords found: {most_common}")
+    return most_common
 
 def create_backup():
     """Creates a timestamped backup of the database file."""
@@ -1347,6 +1324,33 @@ def show_tests():
     return render_template('tests.html', 
                            test_data=test_data_list, # Pass the list
                            page_nav_items=page_nav_items) # Pass nav items
+
+# --- Configuration Check Route ---
+@app.route('/config-check')
+def config_check():
+    """Displays configuration paths for diagnostics."""
+    indexed_root_dir = current_app.config.get('INDEXED_ROOT_DIR')
+    denkraum_archive_env = os.environ.get('DENKRAUM_ARCHIVE_DIR', 'Not Set')
+    database_path = current_app.config.get('DATABASE')
+    app_root_path = current_app.root_path
+    
+    dir_exists = None
+    dir_readable = None
+    if indexed_root_dir:
+        dir_exists = os.path.exists(indexed_root_dir)
+        if dir_exists:
+            dir_readable = os.access(indexed_root_dir, os.R_OK)
+
+    config_info = {
+        'INDEXED_ROOT_DIR_Config': indexed_root_dir,
+        'DENKRAUM_ARCHIVE_DIR_Env': denkraum_archive_env,
+        'DATABASE_Config': database_path,
+        'APP_ROOT_PATH': app_root_path,
+        'INDEXED_ROOT_DIR_Exists': dir_exists,
+        'INDEXED_ROOT_DIR_Readable': dir_readable,
+    }
+    logger.info(f"Configuration check requested. Info: {config_info}")
+    return render_template('config_check.html', config_info=config_info)
 
 if __name__ == '__main__':
     print("Starting Flask web server...")
