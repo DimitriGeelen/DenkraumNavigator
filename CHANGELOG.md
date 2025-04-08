@@ -1,4 +1,12 @@
 # Changelog
+## [4.2.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (4fa7f62)
+- docs: Update notes for floating navigation menu (8b9564b)
+- feat(deploy): Add option to provide custom DB path before fallback (f708673)
+
 ## [4.1.0] - 2025-04-08
 
 ### Changes
