@@ -1,4 +1,15 @@
 # Changelog
+## [4.1.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (f78aa66)
+- fix(tests): Update menu parsing tests for current menu structure (f5fc2ca)
+- test: Create commit to verify download link on history page - integration (662d8cd)
+- test: Create commit to verify download link on history page - integration (2e0934a)
+- test: Create commit to verify download link on history page - integration (28378cd)
+- feat: Add floating section navigation to Tests, Browse, and Search pages (2ee89b4)
+
 ## [4.0.0] - 2025-04-08
 
 ### Changes
