@@ -107,6 +107,7 @@ def test_app_main_menu_loaded():
         {'text': 'MD Files', 'endpoint': 'display_md_files'},
         {'text': 'Unit Tests', 'endpoint': 'show_tests'},
         {'text': 'Configuration', 'endpoint': 'config_page'},
+        {'text': 'Config Check', 'endpoint': 'config_check'},
     ]
     assert main_menu == expected_menu_now
     # Alternative: Read menu.md directly and parse it here for comparison 

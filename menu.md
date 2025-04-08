@@ -8,6 +8,7 @@
 - MD Files: display_md_files
 - Unit Tests: show_tests
 - Configuration: config_page
+- Config Check: config_check
 
 ## Navbar Styling Notes
 
