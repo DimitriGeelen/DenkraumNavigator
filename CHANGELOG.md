@@ -1,4 +1,15 @@
 # Changelog
+## [5.0.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (c3f6cb3)
+- fix: Set DENKRAUM_ARCHIVE_DIR env var in restart scripts (75b6e58)
+- fix(deploy): Define DB_PATH earlier to prevent unbound variable error (152a15f)
+- test: Create commit to verify download link on history page - integration (d5ec35c)
+- fix: Use relative paths for download/thumbnail links (bc61996)
+- test: Create commit to verify download link on history page - integration (e3006e8)
+
 ## [4.7.0] - 2025-04-08
 
 ### Changes
