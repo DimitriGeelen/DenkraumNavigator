@@ -170,7 +170,7 @@ def main():
 
     args = parser.parse_args()
 
-    check_git_status() # Ensure clean state before starting
+    # check_git_status() # Check commented out - now handled by safe_version_bump.sh wrapper
 
     current_version = get_current_version()
     print(f"Current version: {current_version}")
