@@ -27,6 +27,24 @@ logger = logging.getLogger(__name__) # Reinstate global logger for initial parsi
 # --- Flask App Setup ---
 app = Flask(__name__)
 
+# --- Configuration Loading ---
+# Load configuration from environment variables with defaults
+
+# Get the archive root directory from environment or use default
+# Ensures path is absolute
+default_archive_dir = '/dol-data-archive2'
+archive_dir_env = os.environ.get('DENKRAUM_ARCHIVE_DIR')
+if archive_dir_env:
+    app.config['INDEXED_ROOT_DIR'] = os.path.abspath(archive_dir_env)
+    print(f"[INFO] Loaded INDEXED_ROOT_DIR from environment: {app.config['INDEXED_ROOT_DIR']}")
+else:
+    app.config['INDEXED_ROOT_DIR'] = os.path.abspath(default_archive_dir)
+    print(f"[INFO] Using default INDEXED_ROOT_DIR: {app.config['INDEXED_ROOT_DIR']}")
+
+# Default Database Path (can be overridden by tests or future config)
+app.config['DATABASE'] = os.environ.get('DENKRAUM_DB_PATH', 'file_index.db')
+# --- End Configuration Loading ---
+
 # Explicitly configure logging
 log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
 log_handler = RotatingFileHandler('flask_explicit.log', maxBytes=1000000, backupCount=3)
@@ -39,80 +57,15 @@ app.logger.setLevel(logging.DEBUG) # Also set app logger level (Changed to DEBUG
 if len(app.logger.handlers) > 1:
     app.logger.removeHandler(app.logger.handlers[0])
 
-app.config['SECRET_KEY'] = os.urandom(24) # Needed for flash messages, etc.
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', os.urandom(24)) # Use env var or random
 
-# Set default config values (can be overridden by instance config or tests)
-app.config.setdefault('DATABASE', 'file_index.db')
-app.config.setdefault('INDEXED_ROOT_DIR', '/dol-data-archive2') # Ensure this default is correct
-app.config.setdefault('BACKUP_DIR', 'backups') # Default backup dir
-app.config.setdefault('THUMBNAIL_CACHE_DIR', 'thumbnail_cache') # Thumbnail cache
-app.config.setdefault('THUMBNAIL_SIZE', (100, 100)) # Thumbnail size (width, height)
+# Set other default config values (can be overridden by instance config or tests)
+app.config.setdefault('BACKUP_DIR', 'backups')
+app.config.setdefault('THUMBNAIL_CACHE_DIR', 'thumbnail_cache')
+app.config.setdefault('THUMBNAIL_SIZE', (100, 100)) # Width, Height
 
-# --- Menu Parsing (Restore original global load) ---
-MENU_FILE = 'menu.md'
-
-def parse_menu_file(filepath):
-    """Parses the menu.md file into a list of menu items."""
-    menu_items = []
-    logger.debug(f"Attempting to parse menu file: {filepath}")
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            for i, line in enumerate(f):
-                original_line = line.strip()
-                logger.debug(f"Reading menu file line {i+1}: '{original_line}'")
-                line = original_line 
-                if not line or line.startswith('#'):
-                    continue
-                if line.startswith('-') and ':' in line and line.find(':') > 1:
-                    try:
-                        content = line[1:].strip()
-                        text, endpoint = content.split(':', 1)
-                        text = text.strip()
-                        endpoint = endpoint.strip()
-                        if '#' in endpoint:
-                            endpoint = endpoint.split('#', 1)[0].strip()
-                        if text and endpoint:
-                            item = {'text': text, 'endpoint': endpoint}
-                            menu_items.append(item)
-                            logger.debug(f"  -> Parsed item: {item}")
-                        else:
-                            logger.warning(f"Ignoring line with empty text or endpoint after parsing: '{original_line}'")
-                    except ValueError:
-                        logger.warning(f"Could not parse potential menu line: '{original_line}'")
-                else:
-                     logger.warning(f"Ignoring line (doesn't match format ' - Text: endpoint'): '{original_line}'")
-    except FileNotFoundError:
-        logger.error(f"Menu file not found: {filepath}. Returning empty menu.")
-    except Exception as e:
-        logger.error(f"Error reading menu file {filepath}: {e}. Returning empty menu.")
-    logger.debug(f"Finished parsing menu file. Items loaded: {menu_items}")
-    return menu_items
-
-# Load menu globally at startup
-# print("DEBUG: About to call parse_menu_file globally", flush=True)
-main_menu = parse_menu_file(MENU_FILE)
-app.logger.info(f"Main menu loaded at startup: {main_menu}") # Use app.logger
-
-# --- App Initialization / Request Handling (Remove URL generation from here) ---
-@app.before_request
-def before_request():
-    backup_dir = current_app.config.get('BACKUP_DIR', 'backups')
-    os.makedirs(backup_dir, exist_ok=True)
-    g.DATABASE = current_app.config['DATABASE']
-    g.BACKUP_DIR = current_app.config['BACKUP_DIR']
-    # Add main_menu to the request context g, generating URLs here
-    g.main_menu = []
-    for item in main_menu: # Use the globally loaded raw menu data
-        try:
-            # Generate URL within the app context
-            url = url_for(item['endpoint'])
-            g.main_menu.append({'text': item['text'], 'url': url})
-        except Exception as e:
-            logger.error(f"Error generating URL for endpoint '{item.get('endpoint')}': {e}")
-            # Optionally skip this item or add a placeholder
-            # g.main_menu.append({'text': item.get('text', 'Error'), 'url': '#'})
-    logger.debug(f"Menu with URLs generated for request: {g.main_menu}")
-    # g.main_menu = main_menu # Old way, just assigning
+# --- Database Handling ---
+DATABASE_PATH = app.config['DATABASE'] # Store for convenience
 
 def get_db():
     """Opens a new database connection if there is none yet for the current application context."""
