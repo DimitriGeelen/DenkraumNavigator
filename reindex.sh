@@ -68,7 +68,19 @@ if ! test -x "$ARCHIVE_PATH"; then
     exit 1
 fi
 echo "[INFO] Current user has basic read/execute permissions for the directory." 
-echo "[INFO] Note: The user the web server runs as must ALSO have read permissions for downloads/thumbnails to work." 
+
+echo "" # Add blank line
+echo "[IMPORTANT] Web Server Permissions Check Needed MANUALLY!" 
+echo "[IMPORTANT] This script does NOT check or set permissions for the web server user." 
+echo "[IMPORTANT] After indexing, you MUST ensure the user the web server runs as (e.g., 'www-data', or the user configured in systemd) has:"
+echo "[IMPORTANT]   - READ and EXECUTE permissions on '$ARCHIVE_PATH' itself."
+echo "[IMPORTANT]   - READ and EXECUTE permissions on all subdirectories within it."
+echo "[IMPORTANT]   - READ permissions on all files within it."
+echo "[IMPORTANT] Example commands (run with sudo, replace <web_user>:<web_group> if needed):"
+echo "[IMPORTANT]   sudo chown -R <web_user>:<web_group> \"$ARCHIVE_PATH\"" 
+echo "[IMPORTANT]   sudo chmod -R u+rwX,g+rX,o+rX \"$ARCHIVE_PATH\"" # Example: Owner RWX, Group RX, Other RX
+echo "" # Add blank line
+
 # --- End Permission Check ---
 
 echo "[INFO] Indexing target directory set to: $ARCHIVE_PATH"
