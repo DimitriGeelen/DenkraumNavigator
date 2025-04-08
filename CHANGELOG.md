@@ -1,4 +1,17 @@
 # Changelog
+## [4.7.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (482a3a2)
+- feat: Make DB restore optional and run reindex in deploy script (2577f05)
+- feat: Add Tesseract OCR installation to deploy script and docs (c126cb3)
+- fix: Add NLTK punkt_tab download to deploy/reindex scripts (35be14d)
+- fix: Add NLTK punkt download to deploy/reindex scripts (8bca76b)
+- docs: Add guidelines for adding new pages to PAGE_STYLING.md (cca69be)
+- fix: Add NLTK stopwords download to deploy/reindex scripts (2e2532c)
+- feat: Enhance prod restart script with fuser port check (5d566ff)
+
 ## [4.6.0] - 2025-04-08
 
 ### Changes
