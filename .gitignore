@@ -7,6 +7,8 @@
 
 # Log files
 *.log
+*.log.*
+nohup.out
 
 # NLTK Data (if downloaded locally)
 nltk_data/
@@ -37,3 +39,6 @@ restart_test*.sh
 
 # Restart server script
 # restart_server.sh # Don't ignore this script
+
+# Thumbnail cache
+thumbnail_cache/

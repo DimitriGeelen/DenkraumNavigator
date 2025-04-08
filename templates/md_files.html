@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Root Markdown Files{% endblock %}
+
+{% block content %}
+    <h2>Edit Root Markdown Files</h2>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes" style="margin-bottom: 15px;">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if md_files %}
+        {% for file_data in md_files %}
+            <div class="md-editor-section" style="margin-bottom: 30px; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+                <h3>{{ file_data.filename }}</h3>
+                
+                {% if file_data.error %}
+                    <p style="color: red;">Error loading file content. Check server logs.</p>
+                    <pre>{{ file_data.content }}</pre>
+                {% else %}
+                    <form method="POST" action="{{ url_for('update_md_file') }}">
+                        <input type="hidden" name="filename" value="{{ file_data.filename }}">
+                        <div class="form-group">
+                            <label for="md_content_{{ loop.index }}">Content (Markdown):</label>
+                            <textarea class="form-control" id="md_content_{{ loop.index }}" name="md_content" rows="15" style="font-family: monospace;">{{ file_data.content }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save {{ file_data.filename }}</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No Markdown files found in the root directory or an error occurred.</p>
+    {% endif %}
+
+    <hr>
+    <p><a href="{{ url_for('index') }}">Back to Search</a></p>
+
+{% endblock %} 
