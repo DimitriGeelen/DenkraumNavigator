@@ -1,4 +1,29 @@
 # Changelog
+## [3.2.0] - 2025-04-08
+
+### Changes
+
+- fix: Add 'Top' link to floating page navigation (02d91fc)
+- feat: Add collapsible floating navigation menu to history page (921c430)
+- fix(tests): Correct mock logic in backup restore test (0263ba5)
+- test: Create commit to verify download link on history page - integration (24e61b9)
+- test: Create commit to verify download link on history page - integration (4bb1a73)
+- test: Create commit to verify download link on history page - integration (eb79001)
+- test: Create commit to verify download link on history page - integration (6aee10c)
+- test: Create commit to verify download link on history page - integration (65ea405)
+- test: Create commit to verify download link on history page - integration (68d69d4)
+- test: Create commit to verify download link on history page - integration (3398b4f)
+- test: Create commit to verify download link on history page - integration (4a1218f)
+- test: Create commit to verify download link on history page - integration (04c7225)
+- test: Create commit to verify download link on history page - integration (fe383bf)
+- test: Create commit to verify download link on history page - integration (f6af661)
+- test: Create commit to verify download link on history page - integration (67ef997)
+- test: Create commit to verify download link on history page - integration (13db779)
+- test: Create commit to verify download link on history page (058f439)
+- test: Create commit to verify download link on history page (5dc798d)
+- feat: Improve history page layout for compactness and readability (4c4d035)
+- test: Update tests to reflect current menu and index page content (7c7c898)
+
 ## [3.1.0] - 2025-04-08
 
 ### Changes
