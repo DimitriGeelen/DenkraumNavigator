@@ -54,6 +54,23 @@ if [ ! -d "$ARCHIVE_PATH" ]; then
     echo "[ERROR] Provided path '$ARCHIVE_PATH' is not a valid directory or does not exist." >&2
     exit 1
 fi
+
+# --- Add Permission Check --- 
+echo "[INFO] Checking current user's permissions for '$ARCHIVE_PATH'..."
+if ! test -r "$ARCHIVE_PATH"; then
+    echo "[ERROR] The current user ($(whoami)) does not have READ permission for '$ARCHIVE_PATH'." >&2
+    echo "[ERROR] Please check directory permissions." >&2
+    exit 1
+fi
+if ! test -x "$ARCHIVE_PATH"; then
+    echo "[ERROR] The current user ($(whoami)) does not have EXECUTE permission for '$ARCHIVE_PATH' (needed to list contents)." >&2
+    echo "[ERROR] Please check directory permissions." >&2
+    exit 1
+fi
+echo "[INFO] Current user has basic read/execute permissions for the directory." 
+echo "[INFO] Note: The user the web server runs as must ALSO have read permissions for downloads/thumbnails to work." 
+# --- End Permission Check ---
+
 echo "[INFO] Indexing target directory set to: $ARCHIVE_PATH"
 
 # Activate virtual environment
