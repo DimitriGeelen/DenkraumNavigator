@@ -5,58 +5,58 @@
 {% block content %}
 {# Remove redundant nav block, inherit from base.html #}
 
-<div class="container">
+    <div class="container">
     <h1>DenkraumNavigator Archive Search</h1>
     
     <h2>Filters & Tag Cloud</h2>
     <div class="filters-tagcloud-grid">
         <div class="filters">
             <h3>Search Filters</h3>
-            <form method="post">
-                <div class="form-grid">
+        <form method="post">
+            <div class="form-grid">
+                <div>
+                    <label for="filename">Filename contains:</label>
+                    <input type="text" id="filename" name="filename" value="{{ search_terms.filename or '' }}">
+                </div>
+                
+                <details>
+                    <summary>Year</summary>
                     <div>
-                        <label for="filename">Filename contains:</label>
-                        <input type="text" id="filename" name="filename" value="{{ search_terms.filename or '' }}">
-                    </div>
-                    
-                    <details>
-                        <summary>Year</summary>
-                        <div>
                             <label for="year" style="display:none;">Year:</label>
                             <select id="year" name="year" multiple size="5">
-                                <option value="" {% if not search_terms.year %}selected{% endif %}>-- Any Year --</option>
-                                {% for year_option in distinct_years %}
+                            <option value="" {% if not search_terms.year %}selected{% endif %}>-- Any Year --</option>
+                            {% for year_option in distinct_years %}
                                     <option value="{{ year_option }}" {% if year_option|string in search_terms.year %}selected{% endif %}>{{ year_option }}</option>
-                                {% endfor %}
-                            </select>
-                            <small>(Hold Ctrl/Cmd to select multiple)</small>
-                        </div>
-                    </details>
-                    
-                    <details>
-                        <summary>File Type(s)</summary>
-                        <div>
-                            <label for="type" style="display:none;">File Type(s):</label>
-                            <select id="type" name="type" multiple size="5">
-                                <option value="" {% if not search_terms.type %}selected{% endif %}>-- Any Type --</option>
-                                {% for type_option in distinct_types %}
-                                    <option value="{{ type_option }}" {% if type_option in search_terms.type %}selected{% endif %}>{{ type_option }}</option>
-                                {% endfor %}
-                            </select>
-                            <small>(Hold Ctrl/Cmd to select multiple)</small>
-                        </div>
-                    </details>
-
-                    <div>
-                        <label for="keywords">Keywords (comma-separated):</label>
-                        <input type="text" id="keywords" name="keywords" value="{{ search_terms.keywords or '' }}">
+                            {% endfor %}
+                        </select>
+                        <small>(Hold Ctrl/Cmd to select multiple)</small>
                     </div>
-                </div>
+                </details>
+                
+                <details>
+                    <summary>File Type(s)</summary>
+                    <div>
+                         <label for="type" style="display:none;">File Type(s):</label>
+                            <select id="type" name="type" multiple size="5">
+                             <option value="" {% if not search_terms.type %}selected{% endif %}>-- Any Type --</option>
+                             {% for type_option in distinct_types %}
+                                    <option value="{{ type_option }}" {% if type_option in search_terms.type %}selected{% endif %}>{{ type_option }}</option>
+                             {% endfor %}
+                         </select>
+                         <small>(Hold Ctrl/Cmd to select multiple)</small>
+                    </div>
+                </details>
+
+                 <div>
+                     <label for="keywords">Keywords (comma-separated):</label>
+                     <input type="text" id="keywords" name="keywords" value="{{ search_terms.keywords or '' }}">
+                 </div>
+            </div>
                 <div class="form-buttons">
-                    <button type="submit">Search</button>
+                 <button type="submit">Search</button>
                     <a href="{{ url_for('index') }}" class="btn-link btn-link-reset">Reset Filters</a>
-                </div>
-            </form>
+            </div>
+        </form>
         </div>
         <div class="tag-cloud">
             <h3>Keyword Cloud</h3>
@@ -72,11 +72,11 @@
         </div>
     </div>
 
-    <div class="results">
-        <h2>Search Results</h2>
-        {% if results %}
-            <p>Found {{ results|length }} matching files.</p>
-            {% for result in results %}
+        <div class="results">
+            <h2>Search Results</h2>
+            {% if results %}
+                <p>Found {{ results|length }} matching files.</p>
+                {% for result in results %}
             <div class="search-result-container">
                 <div class="result-icon">
                     {# Match against full category type names from DB #}
@@ -127,13 +127,13 @@
                         <i class="fas fa-download"></i> Download
                     </a>
                 </div>
-            </div>
-            {% endfor %}
-        {% elif request.method == 'POST' %}
-            <p class="no-results">No files found matching your criteria.</p>
-        {% else %}
-             <p class="no-results">Enter search terms above to begin.</p>
-        {% endif %}
+                </div>
+                {% endfor %}
+            {% elif request.method == 'POST' %}
+                <p class="no-results">No files found matching your criteria.</p>
+            {% else %}
+                 <p class="no-results">Enter search terms above to begin.</p>
+            {% endif %}
+        </div>
     </div>
-</div>
 {% endblock %} 
