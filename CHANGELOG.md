@@ -1,4 +1,37 @@
 # Changelog
+## [4.3.0] - 2025-04-08
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (8733ff9)
+- fix: Resolve test failures and skip problematic thumbnail tests (1980e50)
+- test: Create commit to verify download link on history page - integration (dc446ba)
+- test: Create commit to verify download link on history page - integration (fa0843c)
+- test: Create commit to verify download link on history page - integration (cff2b8f)
+- test: Create commit to verify download link on history page - integration (3656109)
+- test: Create commit to verify download link on history page - integration (039809c)
+- test: Create commit to verify download link on history page - integration (b3397ff)
+- test: Create commit to verify download link on history page - integration (6122dbe)
+- test: Create commit to verify download link on history page - integration (5080f47)
+- test: Create commit to verify download link on history page - integration (11d09c6)
+- test: Create commit to verify download link on history page - integration (9403ea1)
+- test: Create commit to verify download link on history page - integration (ab0a323)
+- test: Create commit to verify download link on history page - integration (7f846f4)
+- test: Create commit to verify download link on history page - integration (91cc91c)
+- test: Create commit to verify download link on history page - integration (4ff2848)
+- test: Create commit to verify download link on history page - integration (bedb1a2)
+- test: Create commit to verify download link on history page - integration (abb252e)
+- test: Create commit to verify download link on history page - integration (4d5d1e4)
+- test: Create commit to verify download link on history page - integration (8f787df)
+- test: Create commit to verify download link on history page - integration (a9b071b)
+- test: Create commit to verify download link on history page - integration (568741d)
+- test: Create commit to verify download link on history page - integration (6d1abc7)
+- test: Create commit to verify download link on history page - integration (b034888)
+- test: Create commit to verify download link on history page - integration (1e89f64)
+- test: Create commit to verify download link on history page - integration (0b5f5a3)
+- feat: Commit DB zip on version bump and add tests (e74ba62)
+- test: Add unit tests for version_bumper, downloads, browse, markdown, and thumbnail routes (69b2583)
+
 ## [4.2.0] - 2025-04-08
 
 ### Changes
