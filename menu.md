@@ -7,6 +7,7 @@
 - History & Backups: history
 - MD Files: display_md_files
 - Unit Tests: show_tests
+- Configuration: config_page
 
 ## Navbar Styling Notes
 
@@ -21,7 +22,8 @@
 *   **Solution:** Replaced the hardcoded `<ul>...</ul>` in `templates/index.html` with the same dynamic Jinja loop used in `base.html` to ensure consistent menu rendering across all pages. 
 
 *   [Home](/) - Main search and entry point.
-*   [Goals](/goals) - View and edit project goals.
-*   [History](/history) - View version history, tags, commits, and manage backups.
+*   [Browse](/browse/) - Browse the file structure.
+*   [History & Backups](/history) - View version history, tags, commits, and manage backups.
 *   [Edit MD Files](/md_files) - Edit root Markdown files.
-*   [Tests](/tests) - View discovered unit tests. 
+*   [Unit Tests](/tests) - View discovered unit tests.
+*   [Configuration](/config) - View/Update application configuration. 

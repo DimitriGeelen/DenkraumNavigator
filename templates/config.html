@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Application Configuration</h1>
+
+    <hr>
+
+    <h2>Indexed Archive Directory Path</h2>
+    <p>This is the root directory the application expects to find the indexed files in for downloads and browsing. It is loaded at startup from the <code>DENKRAUM_ARCHIVE_DIR</code> environment variable, or uses a default if the variable is not set.</p>
+    
+    <div class="card bg-light mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Current Effective Path:</h5>
+            <p class="card-text fs-5"><code id="current-path-display">{{ current_path }}</code></p>
+            <p class="card-text"><small>Source: {{ path_source }}</small></p>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>Temporarily Override Path (for current session only)</h3>
+    <div class="alert alert-warning mt-3" role="alert">
+        <strong>Warning:</strong> Changes made using the form below are temporary and only affect the current running server process. They will be lost upon server restart. Use the <code>DENKRAUM_ARCHIVE_DIR</code> environment variable for persistent changes.
+    </div>
+    <form action="{{ url_for('config_page') }}" method="post">
+        <div class="mb-3">
+            <label for="new_path" class="form-label">New Archive Root Path (Temporary Override):</label>
+            <input type="text" class="form-control" id="new_path" name="new_path" placeholder="Enter the absolute path, e.g., /path/to/archive" required>
+            <div id="pathHelp" class="form-text">Enter the absolute path to the main archive directory on the server. The application needs read access to this directory.</div>
+        </div>
+        <button type="submit" class="btn btn-warning">Update Path (Temporary Override)</button>
+    </form>
+
+</div>
+{% endblock %} 

@@ -1261,6 +1261,41 @@ def serve_thumbnail(file_path):
         abort(500)
 # --- End Thumbnail Route --- 
 
+# --- Configuration Page (Informational + Temporary Override) ---
+@app.route('/config', methods=['GET', 'POST'])
+def config_page():
+    """Displays the current INDEXED_ROOT_DIR and allows TEMPORARY overrides."""
+    if request.method == 'POST':
+        new_path = request.form.get('new_path')
+        if new_path and new_path.strip(): # Basic validation: not empty
+            # Normalize the path (handle trailing slashes, etc.)
+            normalized_path = os.path.abspath(new_path.strip())
+            # Update the in-memory config for the current instance
+            current_app.config['INDEXED_ROOT_DIR'] = normalized_path 
+            logger.info(f"INDEXED_ROOT_DIR temporarily updated (in-memory) to: {normalized_path}")
+            flash(f'Archive path temporarily updated to: {normalized_path} (Lost on restart. Use environment variable DENKRAUM_ARCHIVE_DIR for persistence)', 'warning') # Changed flash category
+        else:
+            flash('Error: New path cannot be empty.', 'error')
+        return redirect(url_for('config_page')) # Redirect back to the config page
+
+    # GET request: Display current config (loaded from env or default at startup)
+    current_path = current_app.config.get('INDEXED_ROOT_DIR', 'ERROR: Not Set')
+    # Get the source of the current path for display
+    env_var_value = os.environ.get('DENKRAUM_ARCHIVE_DIR')
+    if env_var_value and os.path.abspath(env_var_value) == current_path:
+        path_source = f"Set via environment variable DENKRAUM_ARCHIVE_DIR = {env_var_value}"
+    else:
+        path_source = f"Default value: /dol-data-archive2 (Environment variable DENKRAUM_ARCHIVE_DIR not set or overridden)"
+        
+    # Check if the path was temporarily overridden in this session
+    # (This check is imperfect as we don't store the *original* startup value easily)
+    # We rely on the flash message and the env var check above.
+
+    return render_template('config.html', 
+                           current_path=current_path, 
+                           path_source=path_source)
+# --- End Configuration Page ---
+
 @app.route('/tests')
 def show_tests():
     """Displays a list of discovered unit tests with section navigation."""
