@@ -36,13 +36,14 @@ echo "Gunicorn will bind to: $BIND_ADDR"
 # --- End IP Detection ---
 
 
-# 1. Check if PID file exists and process is running
-echo "Step 1: Checking for existing Gunicorn process (PID file: $PID_FILE)..."
+# 1. Attempt to stop existing Gunicorn process
+echo "Step 1: Checking and stopping existing Gunicorn process..."
+STOPPED_GRACEFULLY=false
 if [ -f "$PID_FILE" ]; then
     PID=$(cat "$PID_FILE")
     if ps -p $PID > /dev/null; then
-        echo "Found running Gunicorn process (PID: $PID). Attempting graceful shutdown..."
-        kill $PID
+        echo "Found running Gunicorn process (PID: $PID). Attempting graceful shutdown (TERM)..."
+        kill -TERM $PID
         # Wait for shutdown
         TIMEOUT=10
         while [ $TIMEOUT -gt 0 ] && ps -p $PID > /dev/null; do
@@ -52,28 +53,49 @@ if [ -f "$PID_FILE" ]; then
         done
 
         if ps -p $PID > /dev/null; then
-            echo "Gunicorn did not shut down gracefully. Forcing kill..."
-            kill -9 $PID
+            echo "Gunicorn (PID: $PID) did not shut down gracefully. Forcing kill (KILL)..."
+            kill -KILL $PID # Use KILL signal for force
             sleep 1
         else
-            echo "Gunicorn shut down gracefully."
+            echo "Gunicorn (PID: $PID) shut down gracefully."
+            STOPPED_GRACEFULLY=true
         fi
     else
         echo "PID file found, but process (PID: $PID) is not running. Cleaning up stale PID file."
     fi
+    # Always remove PID file if it exists
     rm -f "$PID_FILE"
 else
-    echo "No PID file found. Attempting to kill any Gunicorn processes listening on port ${PORT}..."
-    # Fallback: Try killing by port/process name (less reliable)
-    # Updated pkill pattern to be more specific to the port
-    PIDS_TO_KILL=$(ss -tlpn 'sport = :'"$PORT" | grep gunicorn | awk '{print $7}' | sed -E 's/.*pid=([0-9]+).*/\1/')
-    if [ -n "$PIDS_TO_KILL" ]; then
-        echo "Found Gunicorn processes listening on port ${PORT}: $PIDS_TO_KILL. Killing..."
-        kill $PIDS_TO_KILL || echo "Kill command failed (processes might already be gone)."
-        sleep 1
+    echo "No PID file found."
+fi
+
+# Check if port is still in use, even if PID file was missing or process was killed
+echo "Step 1.1: Verifying port ${PORT} is free..."
+RETRY_COUNT=0
+MAX_RETRIES=3
+while fuser "${PORT}/tcp" > /dev/null 2>&1 && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    ((RETRY_COUNT++))
+    echo "Port ${PORT} is still in use. Attempting to kill process holding it (Attempt $RETRY_COUNT/$MAX_RETRIES)..."
+    
+    # Try graceful termination first
+    echo "Sending TERM signal via fuser..."
+    fuser -k -TERM "${PORT}/tcp"
+    sleep 2 # Wait for graceful termination
+    
+    if fuser "${PORT}/tcp" > /dev/null 2>&1; then
+        echo "Graceful kill failed. Sending KILL signal via fuser..."
+        fuser -k -KILL "${PORT}/tcp"
+        sleep 2 # Wait after forceful kill
     else
-        echo "No running Gunicorn processes found listening on port ${PORT}."
+        echo "Process terminated after TERM signal."
     fi
+done
+
+if fuser "${PORT}/tcp" > /dev/null 2>&1; then
+    echo "ERROR: Port ${PORT} is still in use after $MAX_RETRIES kill attempts. Cannot start Gunicorn." >&2
+    exit 1
+else
+    echo "Port ${PORT} is confirmed free."
 fi
 
 
@@ -81,8 +103,9 @@ fi
 echo "Step 1.5: Clearing __pycache__ directory..."
 rm -rf "$PYCACHE_DIR"
 
-# Wait a moment for the port to potentially free up
-sleep 2 
+# Wait a moment longer for the port to definitely free up
+echo "Waiting 3 seconds before starting new process..."
+sleep 3
 
 # 2. Start new Gunicorn server process
 echo "Step 2: Starting new Gunicorn server process in background..."

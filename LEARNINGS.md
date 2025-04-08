@@ -12,4 +12,12 @@ Record key learnings, insights, and reflections during the project here.
     3.  **Template (`.html`):** Render the main page sections using a loop. Add the `id="{{ item.id }}"` attribute to the container element of each section, using the ID generated in the backend.
     4.  **Template (`.html`):** Add the HTML structure for the floating menu (e.g., `<div class="page-nav-links">...</ul>`). Inside the `<ul>`, loop through the navigation item list passed from the backend and render the `<li><a href="{{ nav_item.href }}">{{ nav_item.text }}</a></li>` elements.
     5.  **CSS/JS:** Ensure the necessary CSS for styling/positioning the floating menu and the JavaScript for any toggle functionality are linked and applied.
+- **Robust Gunicorn Restart:** When Gunicorn fails to shut down cleanly, relying solely on `kill <PID>` from a PID file can be insufficient, leading to "Address already in use" errors. A more robust approach in restart scripts (`restart_server_prod.sh`) is to:
+    1.  Attempt graceful shutdown using the PID file (`kill -TERM <PID>`).
+    2.  Wait and check if the process is gone (`ps -p <PID>`).
+    3.  If still running, force kill (`kill -KILL <PID>`).
+    4.  Regardless of PID file success, check if the port is actually free using `fuser <PORT>/tcp`.
+    5.  If the port is still in use, use `fuser -k -TERM <PORT>/tcp` for a graceful kill.
+    6.  If still in use after a pause, use `fuser -k -KILL <PORT>/tcp` for a forceful kill.
+    7.  Include pauses (`sleep`) after kill attempts to allow the OS time to release the port.
 - 
