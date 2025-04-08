@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import parse_menu_file, app as flask_app # Import the function and the app instance
 
-# Sample valid menu content
+# Sample content for a valid menu.md file
 VALID_MENU_CONTENT = """
 # Main Navigation Menu Items
 
@@ -17,7 +17,7 @@ VALID_MENU_CONTENT = """
 - Search: index
 - Browse: browse
 - History & Backups: history
-# - Goals: display_project_goals # Old entry
+# - Goals: display_project_goals # Old entry - Make sure this line is actually removed or commented in the test data
 - Learnings: display_learnings
 - MD Files: display_md_files
 """

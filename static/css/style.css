@@ -239,27 +239,33 @@ pre code {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 4px;
-    padding: 10px 15px;
-    margin-bottom: 6px;
+    padding: 6px 15px; /* Reduced top/bottom padding */
+    margin-bottom: 10px; /* Increased margin for separation */
     font-family: monospace; /* Specific to history page lists */
     font-size: 0.9em; /* Specific to history page lists */
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    flex-wrap: wrap; /* Allow wrapping if needed */
     align-items: center;
+    border-bottom: 1px solid #ccc; /* Added separator */
 }
 
-/* Container for buttons within a list item */
+/* New style for the info container */
+.content-list li .item-info {
+    flex-grow: 1; /* Allow info to take available space */
+    margin-right: 10px; /* Add some space between info and actions */
+}
+
+/* Adjust action buttons container */
 .content-list li div.actions {
-    white-space: nowrap;
-    flex-shrink: 0; /* Prevent buttons shrinking */
+    margin-left: auto; /* Push actions to the right */
+    display: flex; /* Align buttons horizontally */
+    gap: 5px; /* Space between buttons */
+    flex-shrink: 0; /* Prevent actions container from shrinking */
 }
 
-/* Adjust button size/margin when inside a .content-list li */
-.content-list li .btn-link {
-     padding: 3px 6px;
-     font-size: 0.85em;
-     margin: 0 0 0 5px; /* Keep only left margin for spacing */
+/* Ensure buttons inside actions don't get squished (if needed) */
+.content-list li .actions .btn-link {
+    white-space: nowrap; /* Prevent button text wrapping */
 }
 
 /* Style for disabled-like buttons (e.g., package unavailable) */

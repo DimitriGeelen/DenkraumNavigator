@@ -27,13 +27,13 @@
             <ul class="content-list">
             {% for tag in tag_details %}
                 <li>
-                <span>
+                <div class="item-info">
                     <strong>{{ tag.name }}</strong> (Commit: {{ tag.hash }}, Date: {{ tag.date }})
-                    <br><small class="details">{{ tag.subject }}</small>
+                    <small class="details">{{ tag.subject }}</small>
                     {% if tag.release_notes %}
                         <div class="release-notes-summary">{{ tag.release_notes | safe }}</div>
                     {% endif %}
-                </span>
+                </div>
                     <div class="actions">
                      {# Add download link only if package exists? Currently relies on commit lookup #}
                      <a href="{{ url_for('download_commit_package', commit_hash=tag.hash) }}" 
@@ -54,7 +54,7 @@
         <ul class="content-list">
             {% for commit in commits %}
             <li>
-                <span>
+                <div class="item-info">
                     <strong>{{ commit.hash[:7] }}</strong> {# Show short hash #}
                      ({{ commit.date.split(' ')[0] }}) {# Show only date part #}
                     {% if commit.tags %}
@@ -62,7 +62,6 @@
                             <span class="tag-highlight">[{{ tag }}]</span>
                         {% endfor %}
                     {% endif %}
-                    <br>
                     {# Display release notes if available, otherwise subject #}
                     {% if commit.release_notes %}
                         {# Keep the small tag structure, just render HTML safely inside #}
@@ -71,7 +70,7 @@
                         {# Original display for normal commits #}
                         <small class="details commit-message">{{ commit.subject }}</small>
                     {% endif %}
-                </span>
+                </div>
                     <div class="actions">
                     {# Existing Download Package Button - check correct keys #}
                     {% if commit.has_db_backup and commit.has_zip_backup %}
@@ -99,7 +98,7 @@
             <ul class="content-list">
             {% for backup in manual_db_backups %}
                 <li>
-                <span>{{ backup }}</span>
+                <div class="item-info"><span>{{ backup }}</span></div>
                     <div class="actions">
                     <a href="{{ url_for('download_backup', filename=backup) }}" 
                        class="btn-link btn-link-download-db" 
