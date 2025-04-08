@@ -90,9 +90,9 @@ sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && pip install --upgrad
 echo_info "Python packages installed/updated."
 
 # --- Download NLTK data ---
-echo_step "Downloading necessary NLTK data (stopwords)"
-sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && $PYTHON_CMD -c \"import nltk; nltk.download('stopwords', quiet=True)\""
-echo_info "NLTK 'stopwords' data downloaded (if needed)."
+echo_step "Downloading necessary NLTK data (stopwords, punkt)"
+sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && $PYTHON_CMD -c \"import nltk; nltk.download(['stopwords', 'punkt'], quiet=True)\""
+echo_info "NLTK 'stopwords' and 'punkt' data downloaded (if needed)."
 
 # --- Extract Database from Zip ---
 echo_step "Extracting database from $DB_ZIP_FILENAME"

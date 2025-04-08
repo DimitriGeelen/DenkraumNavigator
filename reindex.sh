@@ -90,8 +90,8 @@ echo "[INFO] Activating virtual environment ($VENV_PATH)..."
 source "$VENV_PATH/bin/activate"
 
 # Download NLTK data (if needed)
-echo "[INFO] Ensuring NLTK 'stopwords' data is downloaded..."
-"$PYTHON_CMD" -c "import nltk; nltk.download('stopwords', quiet=True)"
+echo "[INFO] Ensuring NLTK 'stopwords' and 'punkt' data is downloaded..."
+"$PYTHON_CMD" -c "import nltk; nltk.download(['stopwords', 'punkt'], quiet=True)"
 
 # Run the indexer
 echo "[INFO] Starting indexer.py..."
