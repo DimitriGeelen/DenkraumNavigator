@@ -20,9 +20,13 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Server Management
 
-*   **Starting:** `source .venv/bin/activate && python app.py`
-*   **Stopping:** Find the process ID (`ps aux | grep 'python app.py'`) and use `kill <PID>`, or use `pkill -f 'python app.py'`.
-*   **Reliable Restart Script:** Use `./restart_server.sh`. This script handles stopping existing processes before starting a new one, preventing "Address already in use" errors.
+*   **Application Root:** `/opt/DenkraumNavigator` (location of code, venv, logs)
+*   **Archive Data Root:** `/dol-data-archive2` (location of files to be indexed, set via `DENKRAUM_ARCHIVE_DIR` environment variable)
+*   **Starting/Restarting with Gunicorn:**
+    *   Use `cd /opt/DenkraumNavigator && ./restart_server.sh` for development or general use. This binds Gunicorn to `0.0.0.0:5000` (all interfaces).
+    *   Use `cd /opt/DenkraumNavigator && ./restart_server_prod.sh` for production. This attempts to bind Gunicorn to the specific LAN IP (e.g., `192.168.x.y:5000`). Ensure the detected IP is correct and accessible.
+*   **Stopping:** The restart scripts handle stopping the previous process. Manually, find Gunicorn PID in `gunicorn.pid` and use `kill <PID>`. Avoid `pkill` if possible.
+*   **Logs:** Check `gunicorn_access.log` and `gunicorn_error.log` in `/opt/DenkraumNavigator`.
 
 ## Commit & Versioning
 
