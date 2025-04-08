@@ -52,14 +52,16 @@ def test_zip_created_and_staged_when_db_exists(mock_dependencies):
     # Simulate file_index.db existing
     mock_dependencies['os_path_exists'].side_effect = lambda path: path in [VERSION_FILE, CHANGELOG_FILE, DB_FILENAME]
     
+    # Fix 1: Configure the mock zip instance returned by the context manager
+    mock_zip_instance = MagicMock()
+    mock_dependencies['zipfile_ZipFile'].return_value.__enter__.return_value = mock_zip_instance
+    
     # Simulate running with --minor flag
     run_main_with_args(['--minor'])
     
     # Assert ZipFile was called correctly
     mock_dependencies['zipfile_ZipFile'].assert_called_once_with(DB_ZIP_FILENAME, 'w', zipfile.ZIP_DEFLATED)
     # Assert the mock ZipFile's write method was called
-    # Get the mock ZipFile instance created by the context manager
-    mock_zip_instance = mock_dependencies['zipfile_ZipFile'].__enter__.return_value
     mock_zip_instance.write.assert_called_once_with(DB_FILENAME, arcname=DB_FILENAME)
     
     # Assert run_command was called for git add with the zip file
@@ -90,22 +92,27 @@ def test_zip_failure_warning_and_commit_proceeds(mock_dependencies):
     # Simulate file_index.db existing
     mock_dependencies['os_path_exists'].side_effect = lambda path: path in [VERSION_FILE, CHANGELOG_FILE, DB_FILENAME]
     # Simulate an error during ZipFile write
-    mock_dependencies['zipfile_ZipFile'].__enter__.return_value.write.side_effect = Exception("Disk full")
-    
+    # Fix 2a: Configure the mock zip instance and its write method's side effect
+    mock_zip_instance = MagicMock()
+    mock_zip_instance.write.side_effect = Exception("Disk full")
+    mock_dependencies['zipfile_ZipFile'].return_value.__enter__.return_value = mock_zip_instance
+
     # Simulate running with --major flag
     run_main_with_args(['--major'])
-    
+
     # Assert ZipFile was called
     mock_dependencies['zipfile_ZipFile'].assert_called_once_with(DB_ZIP_FILENAME, 'w', zipfile.ZIP_DEFLATED)
-    
-    # Assert run_command was called for git add WITHOUT the zip file
-    expected_add_call = call(["git", "add", VERSION_FILE, CHANGELOG_FILE])
+    mock_zip_instance.write.assert_called_once_with(DB_FILENAME, arcname=DB_FILENAME) # Write is still attempted
+
+    # Fix 1: Assert run_command was called for git add *without* the zip file name
+    # because the exception prevented it from being added to files_to_add
+    expected_add_call = call(["git", "add", VERSION_FILE, CHANGELOG_FILE]) # Corrected: No DB_ZIP_FILENAME
     assert expected_add_call in mock_dependencies['run_command'].call_args_list
-    
+
     # Assert that warnings were printed
     mock_dependencies['print'].assert_any_call(f"Warning: Failed to create {DB_ZIP_FILENAME} from {DB_FILENAME}: Disk full", file=sys.stderr)
     mock_dependencies['print'].assert_any_call(f"Warning: Proceeding to commit without {DB_ZIP_FILENAME}.", file=sys.stderr)
-    
+
     # Assert that the commit command was still called
     expected_commit_call = call(["git", "commit", "-m", "chore: Bump version to 2.0.0"]) # Calculated based on fixture
     assert expected_commit_call in mock_dependencies['run_command'].call_args_list 

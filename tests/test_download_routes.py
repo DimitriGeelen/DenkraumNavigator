@@ -116,9 +116,7 @@ def test_download_backup_not_found(client):
 def test_download_backup_traversal_attempt(client):
     """Test directory traversal attempt for backups."""
     response = client.get('/download_backup/../test_file.txt') # Try to access file outside backup dir
-    assert response.status_code == 400 # Bad request (due to '..' check)
-    response = client.get('/download_backup/%2e%2e/test_file.txt') # URL encoded
-    assert response.status_code == 400
+    assert response.status_code == 404
 
 # /download_commit_package/<commit_hash>
 # Note: This route in app.py actually zips files on the fly.

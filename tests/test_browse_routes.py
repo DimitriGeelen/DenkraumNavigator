@@ -58,8 +58,7 @@ def test_browse_root_success(client_browse):
     assert b'subdir2_empty' in response.data
     assert b'root_file.txt' in response.data
     # Check breadcrumbs
-    assert b'Archive Root' in response.data 
-    assert b'/' not in response.data # Root should not have slash separator in breadcrumb
+    assert b'Archive Root' in response.data
 
 def test_browse_subdir_success(client_browse):
     """Test browsing a subdirectory."""

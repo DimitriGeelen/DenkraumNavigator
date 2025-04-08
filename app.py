@@ -368,30 +368,31 @@ def download_file(file_path=None):
     if not file_path:
         abort(404) # No file path provided
 
-    # --- Security Check --- 
-    # 1. Normalize the path to prevent directory traversal ('../')
-    # os.path.abspath ensures it starts from root, preventing relative paths outside the intended dir
-    # We prepend / to file_path because the indexed paths are absolute
-    safe_path = os.path.abspath(os.path.join("/", file_path)) # Treat incoming path as relative to root
+    # --- Security Check (Revised based on serve_thumbnail logic) ---
+    # 1. Get the absolute path of the configured root directory
+    indexed_root_abs = os.path.abspath(current_app.config['INDEXED_ROOT_DIR'])
     
-    # 2. Ensure the requested path is within the allowed INDEXED_ROOT_DIR
-    # os.path.commonpath requires Python 3.5+ 
-    # For broader compatibility, we check if safe_path starts with the root dir
-    if not safe_path.startswith(os.path.abspath(current_app.config['INDEXED_ROOT_DIR']) + os.sep):
-        print(f"Attempt to access file outside allowed directory: {safe_path}")
+    # 2. Join the requested file_path with the root directory and then normalize
+    requested_path = os.path.join(indexed_root_abs, file_path)
+    safe_path = os.path.abspath(requested_path)
+    
+    # 3. Ensure the final normalized path is still within the root directory
+    if not safe_path.startswith(indexed_root_abs + os.sep):
+        logger.warning(f"Attempt to access file outside allowed directory: {safe_path} (resolved from {file_path}, root: {indexed_root_abs})")
         abort(403) # Forbidden
 
-    # 3. Check if the file actually exists
+    # 4. Check if the file actually exists
     if not os.path.isfile(safe_path):
-        print(f"Requested file not found: {safe_path}")
+        logger.warning(f"Requested file not found for download: {safe_path}")
         abort(404) # Not Found
 
     try:
         # Use send_file to handle MIME types and download prompts
         # as_attachment=True forces the browser download dialog
+        logger.info(f"Serving file for download: {safe_path}") # Log success
         return send_file(safe_path, as_attachment=True)
     except Exception as e:
-        print(f"Error sending file '{safe_path}': {e}")
+        logger.error(f"Error sending file '{safe_path}': {e}")
         abort(500) # Internal Server Error
 
 @app.route('/download_backup/<filename>')
@@ -1189,9 +1190,13 @@ def serve_thumbnail(file_path):
     """Generates (if needed) and serves a thumbnail for an image."""
     
     # --- Security Check (Similar to download_file) ---
-    safe_original_path = os.path.abspath(os.path.join("/", file_path))
-    if not safe_original_path.startswith(os.path.abspath(current_app.config['INDEXED_ROOT_DIR']) + os.sep):
-        logger.warning(f"Attempt to access file outside allowed directory for thumbnail: {safe_original_path}")
+    # Correctly join the file_path with the configured root directory
+    indexed_root = os.path.abspath(current_app.config['INDEXED_ROOT_DIR'])
+    safe_original_path = os.path.abspath(os.path.join(indexed_root, file_path))
+    
+    # Ensure the resolved path is still within the indexed root directory
+    if not safe_original_path.startswith(indexed_root + os.sep):
+        logger.warning(f"Attempt to access file outside allowed directory for thumbnail: {safe_original_path} (resolved from {file_path})")
         abort(403)
 
     if not os.path.isfile(safe_original_path):
