@@ -15,6 +15,7 @@ ARCHIVE_DIR="/dol-data-archive2" # Location where user must place archive files
 DB_FILENAME="file_index.db" # Name of the database file
 PYTHON_CMD="python3" # Command to run python
 VENV_DIR=".venv" # Name of the virtual environment directory
+DB_ZIP_FILENAME="file_index.zip" # Name of the database zip file
 
 # --- Helper Functions ---
 echo_info() {
@@ -45,8 +46,8 @@ fi
 
 echo_step "Updating package lists and installing dependencies"
 sudo apt-get update
-sudo apt-get install -y git $PYTHON_CMD ${PYTHON_CMD}-venv # Add other system deps if needed
-echo_info "Dependencies installed: git, python3, python3-venv"
+sudo apt-get install -y git $PYTHON_CMD ${PYTHON_CMD}-venv unzip # Added unzip
+echo_info "Dependencies installed: git, python3, python3-venv, unzip"
 
 echo_step "Cloning/Updating repository from $REPO_URL"
 if [ -d "$INSTALL_DIR/.git" ]; then
@@ -78,6 +79,32 @@ echo_step "Activating virtual environment and installing/updating Python package
 sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
 echo_info "Python packages installed/updated from requirements.txt"
 
+# --- Extract Database from Zip ---
+echo_step "Extracting database from $DB_ZIP_FILENAME (if exists)"
+DB_ZIP_PATH="$INSTALL_DIR/$DB_ZIP_FILENAME"
+DB_PATH="$INSTALL_DIR/$DB_FILENAME"
+if [ -f "$DB_ZIP_PATH" ]; then
+    echo_info "Found $DB_ZIP_FILENAME. Extracting $DB_FILENAME..."
+    # Run unzip as the app user, overwrite existing file (-o), extract to install dir (-d)
+    sudo -u $APP_USER unzip -o "$DB_ZIP_PATH" -d "$INSTALL_DIR" "$DB_FILENAME" 
+    if [ $? -ne 0 ]; then # Check unzip exit status
+        echo "[ERROR] Failed to extract $DB_FILENAME from $DB_ZIP_FILENAME." >&2
+        exit 1
+    fi
+    if [ ! -f "$DB_PATH" ]; then # Verify extraction
+        echo "[ERROR] $DB_FILENAME not found after attempting extraction from $DB_ZIP_FILENAME." >&2
+        exit 1
+    fi
+    # Set ownership just in case
+    sudo chown $APP_USER:$APP_USER "$DB_PATH"
+    echo_info "Successfully extracted $DB_FILENAME."
+else
+    echo "[ERROR] $DB_ZIP_FILENAME not found in $INSTALL_DIR!" >&2
+    echo "[ERROR] This deployment method requires the zipped database to be present in the repository." >&2
+    echo "[ERROR] Please ensure the version you are deploying was tagged correctly using the updated version bumper." >&2
+    exit 1
+fi
+
 echo_step "Creating necessary directories (if they don't exist)"
 sudo -u $APP_USER mkdir -p backups thumbnail_cache
 echo_info "Ensured directories exist: backups/, thumbnail_cache/"
@@ -103,64 +130,18 @@ echo "!! from the source to '$INSTALL_DIR/backups/'.                            
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 read -p "Press [Enter] key ONLY after you have copied the Archive Data AND the Database File..." REPLY
 
-# --- Verify Database File --- 
-echo_step "Checking for existing database file"
-DB_PATH="$INSTALL_DIR/$DB_FILENAME"
-RUN_INDEXER=false # Default: Assume we won't run the indexer
-
+# --- Verify Database File (This step is less critical now but good sanity check) ---
+echo_step "Verifying database file presence"
 if [ -f "$DB_PATH" ]; then
-    echo_info "Database file $DB_FILENAME found in default location: $INSTALL_DIR."
-    echo_info "Using the provided database file."
-    # Set ownership just in case it was copied as root or by script previously
-    sudo chown $APP_USER:$APP_USER "$DB_PATH"
+    echo_info "Database file $DB_FILENAME found in $INSTALL_DIR."
 else
-    # Default database not found, ask user for custom path
-    echo_info "Database file $DB_FILENAME NOT found in default location ($INSTALL_DIR)."
-    read -p "Do you want to specify the path to an existing database file? (y/N): " specify_path_response
-    
-    if [[ "$specify_path_response" =~ ^[Yy]$ ]]; then
-        read -p "Enter the FULL path to your existing database file (e.g., /path/to/your/$DB_FILENAME): " CUSTOM_DB_PATH
-        
-        if [ -f "$CUSTOM_DB_PATH" ]; then
-            echo_info "Found database at custom path: $CUSTOM_DB_PATH"
-            echo_info "Copying it to the expected location: $DB_PATH ..."
-            sudo cp "$CUSTOM_DB_PATH" "$DB_PATH"
-            sudo chown $APP_USER:$APP_USER "$DB_PATH"
-            echo_info "Successfully copied custom database. Will use this database."
-            RUN_INDEXER=false # Ensure indexer does not run
-        else
-            echo "[ERROR] Custom database path NOT found: $CUSTOM_DB_PATH" >&2
-            echo_info "Falling back to running the indexer to create a new database."
-            echo_info "Ensure the archive data is correctly placed in $ARCHIVE_DIR first!"
-            RUN_INDEXER=true
-        fi
-    else
-        # User chose not to specify a path
-        echo_info "Proceeding without a pre-existing database file."
-        echo_info "The indexer will now run to create a new database."
-        echo_info "Ensure the archive data is correctly placed in $ARCHIVE_DIR first!"
-        RUN_INDEXER=true
-    fi
-fi
-
-# --- Optional Indexer Step ---
-if [ "$RUN_INDEXER" = true ]; then
-    echo_step "Running the indexer to build the database"
-    echo_info "This may take a while depending on the size of your archive..."
-    # Run as APP_USER within the activated venv
-    sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && $PYTHON_CMD indexer.py"
-    echo_info "Indexer finished."
-else
-    echo_info "Skipping indexer step as existing database was found."
+    echo "[ERROR] Database file $DB_FILENAME NOT found in $INSTALL_DIR after extraction attempt!" >&2
+    exit 1
 fi
 
 # --- Completion ---
 echo_step "Deployment Setup Complete!"
-if [ "$RUN_INDEXER" = true ]; then
-    echo_info "Created new database: $DB_PATH (Expected name: $DB_FILENAME)"
-else
-    echo_info "Using existing database: $DB_PATH (Expected name: $DB_FILENAME)"
-fi
+echo_info "Database extracted from $DB_ZIP_FILENAME: $DB_PATH (Expected name: $DB_FILENAME)"
 echo_info "To start the application server:"
 echo "1. Change directory: cd $INSTALL_DIR"
 echo "2. Activate environment: source $VENV_DIR/bin/activate"

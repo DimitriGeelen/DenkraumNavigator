@@ -12,9 +12,13 @@ import re
 import sys
 from datetime import datetime
 import os
+import zipfile
+import shutil
 
 VERSION_FILE = "VERSION"
 CHANGELOG_FILE = "CHANGELOG.md"
+DB_FILENAME = "file_index.db"
+DB_ZIP_FILENAME = "file_index.zip"
 
 def run_command(command, capture_output=False, check=True, shell=False):
     """Helper function to run a shell command."""
@@ -200,9 +204,25 @@ def main():
     update_version_file(new_version)
     update_changelog(new_version, commits_summary)
 
-    # --- Git actions ---
+    # --- Zip Database and Git actions ---
+    files_to_add = [VERSION_FILE, CHANGELOG_FILE]
+    print(f"Checking for database file: {DB_FILENAME}")
+    if os.path.exists(DB_FILENAME):
+        print(f"Found {DB_FILENAME}. Creating zip archive {DB_ZIP_FILENAME}...")
+        try:
+            with zipfile.ZipFile(DB_ZIP_FILENAME, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.write(DB_FILENAME, arcname=DB_FILENAME) # Store with original name inside zip
+            print(f"Successfully created {DB_ZIP_FILENAME}.")
+            files_to_add.append(DB_ZIP_FILENAME)
+        except Exception as e:
+            print(f"Warning: Failed to create {DB_ZIP_FILENAME} from {DB_FILENAME}: {e}", file=sys.stderr)
+            print(f"Warning: Proceeding to commit without {DB_ZIP_FILENAME}.", file=sys.stderr)
+    else:
+        print(f"Warning: Database file {DB_FILENAME} not found in root directory.", file=sys.stderr)
+        print(f"Warning: Cannot create {DB_ZIP_FILENAME}. Proceeding to commit without it.", file=sys.stderr)
+
     print("Staging changes...")
-    run_command(["git", "add", VERSION_FILE, CHANGELOG_FILE])
+    run_command(["git", "add"] + files_to_add)
 
     commit_message = f"chore: Bump version to {new_version}"
     print(f"Committing with message: '{commit_message}'")

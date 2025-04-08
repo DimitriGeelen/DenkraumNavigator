@@ -2,8 +2,11 @@
 .venv/
 
 # SQLite database
-*.db
-*.db-journal
+# *.db # Removed generic rule
+backups/*.db # Ignore DB files only in backups dir
+file_index.db # Ignore the working DB file in root
+*.db-journal # Ignore journal files anywhere
+!file_index.zip # Ensure the zipped working DB is NOT ignored
 
 # Log files
 *.log
@@ -28,7 +31,7 @@ instance/
 backups/
 
 # Test files and templates
-test_*.py
+# test_*.py # Removed - This was ignoring tests in the tests/ directory
 tests/__init__.py
 *_template.html
 *corrected.sh
