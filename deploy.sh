@@ -89,6 +89,11 @@ echo_step "Installing/Updating Python packages from requirements.txt"
 sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
 echo_info "Python packages installed/updated."
 
+# --- Download NLTK data ---
+echo_step "Downloading necessary NLTK data (stopwords)"
+sudo -u $APP_USER bash -c "source $VENV_DIR/bin/activate && $PYTHON_CMD -c \"import nltk; nltk.download('stopwords', quiet=True)\""
+echo_info "NLTK 'stopwords' data downloaded (if needed)."
+
 # --- Extract Database from Zip ---
 echo_step "Extracting database from $DB_ZIP_FILENAME"
 DB_ZIP_PATH="$INSTALL_DIR/$DB_ZIP_FILENAME"
