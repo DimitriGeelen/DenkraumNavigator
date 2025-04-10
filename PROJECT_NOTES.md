@@ -156,4 +156,9 @@ This section lists key Python and Shell scripts used for application functionali
 **Shell Scripts (.sh):**
 
 *   `restart_server.sh`: Stops any running Gunicorn process for the app and restarts it in the background, binding to `0.0.0.0:5000`. Used for general development/testing.
-*   `restart_server_prod.sh`: Similar to `restart_server.sh`
+*   `restart_server_prod.sh`: Similar to `restart_server.sh` but attempts to bind Gunicorn specifically to the detected LAN IP address (e.g., `192.168.x.y:5000`). Intended for production use.
+*   `safe_version_bump.sh`: A wrapper script for `version_bumper.py`. Ensures the Git working directory is clean and unit tests pass (`pytest`) before allowing the version bump script to run.
+*   `deploy.sh`: (Purpose inferred from `commit.md`) Likely handles deployment tasks, including potentially checking out code and extracting `file_index.db` from the committed `file_index.zip`.
+*   `.git/hooks/post-commit`: Git hook script that runs automatically after each commit. Creates database and code backups (`backups/commit_<hash>.*`) and copies the database backup back to the root (`file_index.db`).
+*   `run_cleanup.sh`: Wrapper script to run `clean_up_database.py` within the virtual environment. Removes dead links from the database.
+*   `reindex.sh`: Wrapper script to run the full indexer (`indexer.py`) within the virtual environment.
