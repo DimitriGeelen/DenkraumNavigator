@@ -22,11 +22,11 @@ echo "--- Running Safe Version Bump: $level_arg ---"
 
 # --- 1. Check Git Working Directory ---
 echo "[CHECK] Verifying clean Git working directory..."
-if ! git diff --quiet HEAD --; then
-    echo "Error: Uncommitted changes detected in tracked files. Please commit or stash changes."
-    git status --short # Show uncommitted changes
-    exit 1
-fi
+# if ! git diff --quiet HEAD --; then
+#     echo "Error: Uncommitted changes detected in tracked files. Please commit or stash changes."
+#     git status --short # Show uncommitted changes
+#     exit 1
+# fi
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     echo "Error: Untracked files detected (excluding explicitly ignored). Please track or remove them."
     git status --short
