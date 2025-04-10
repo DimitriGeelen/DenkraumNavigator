@@ -160,3 +160,4 @@ This section lists key Python and Shell scripts used for application functionali
 *   `.git/hooks/post-commit`: Git hook script that runs automatically after each commit. Creates database and code backups (`backups/commit_<hash>.*`) and copies the database backup back to the root (`file_index.db`).
 
 # Test commit for download link verification.
+# Test commit for download link verification.
