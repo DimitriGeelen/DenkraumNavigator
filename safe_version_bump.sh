@@ -36,6 +36,9 @@ echo "Success: Git working directory is clean."
 
 # --- 2. Run Unit Tests ---
 echo "[CHECK] Running unit tests (pytest)..."
+# Activate virtual environment
+source .venv/bin/activate
+
 if ! pytest; then
     echo "Error: Unit tests failed. Please fix tests before bumping version."
     exit 1
@@ -44,11 +47,15 @@ echo "Success: Unit tests passed."
 
 # --- 3. Run Version Bumper Script ---
 echo "[ACTION] Running python version_bumper.py $level_arg ..."
-if python version_bumper.py "$level_arg"; then
-    echo "--- Safe Version Bump Completed Successfully ---"
-else
+# Ensure python is run from the venv (though activate should handle this)
+if ! python version_bumper.py "$level_arg"; then
     echo "Error: python version_bumper.py script failed."
     exit 1 # Exit with error if the python script failed
 fi
+
+# Deactivate virtual environment (optional, but good practice)
+deactivate
+
+echo "--- Safe Version Bump Completed Successfully ---"
 
 exit 0
