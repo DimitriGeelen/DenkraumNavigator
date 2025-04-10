@@ -1,4 +1,15 @@
 # Changelog
+## [5.2.0] - 2025-04-10
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (94253e3)
+- docs: Add cleanup/reindex scripts to project notes (da10dea)
+- refactor: Rename COMMIT_VERSIONING_CHANGELOG.md to commit.md (395430f)
+- docs: Reference database_management.md in project notes (cc405f0)
+- docs: Add database management documentation (6843919)
+- feat: Add database cleanup script and wrapper (4dfe371)
+
 ## [5.1.0] - 2025-04-10
 
 ### Changes
