@@ -523,14 +523,21 @@ def index_files(directory_path, db_conn, db_cursor):
 
 # --- Main Execution ---
 if __name__ == "__main__":
-    print("Starting File Indexer...")
-    if len(sys.argv) != 2:
-        print(f"Usage: python {os.path.basename(__file__)} <directory_path>")
+    # --- Argument Parsing ---
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: python indexer.py <directory_to_index> [database_file]", file=sys.stderr)
         sys.exit(1)
+    root_directory = sys.argv[1]
 
-    target_directory = sys.argv[1]
-    print(f"Target Directory: {target_directory}")
-    print(f"Database File: {DATABASE_NAME}")
+    # Use argument if provided, otherwise default
+    db_file = sys.argv[2] if len(sys.argv) == 3 else DATABASE_NAME
+    # Ignore environment variable if DB is passed as argument
+    if len(sys.argv) != 3:
+         db_file = os.environ.get('DENKRAUM_DB_FILE', db_file)
+
+    print("Starting File Indexer...")
+    print(f"Target Directory: {root_directory}")
+    print(f"Database File: {db_file}")
     print(f"Log File: {LOG_FILE}")
 
     # --- Prerequisite Checks ---
@@ -551,11 +558,11 @@ if __name__ == "__main__":
     # --- Database Setup & Indexing ---
     conn, cursor = None, None
     try:
-        conn, cursor = setup_database()
-        print(f"Database '{DATABASE_NAME}' initialized/opened.")
+        conn, cursor = setup_database(db_file)
+        print(f"Database '{db_file}' initialized/opened.")
 
         # --- Start Indexing ---
-        processed, failed = index_files(target_directory, conn, cursor)
+        processed, failed = index_files(root_directory, conn, cursor)
 
     except sqlite3.Error as e:
         print(f"\nDatabase runtime error: {e}", file=sys.stderr)

@@ -36,8 +36,10 @@ if ! command -v $PYTHON_CMD &> /dev/null; then
 fi
 
 # --- Run Indexer ---
+DB_FILENAME="file_index.db" # Explicitly define the target DB
 echo "[INFO] Running $INDEXER_SCRIPT on directory: $TARGET_DIR"
-$PYTHON_CMD "$INDEXER_SCRIPT" "$TARGET_DIR"
+echo "[INFO] Using database file: $PROJECT_ROOT/$DB_FILENAME"
+$PYTHON_CMD "$INDEXER_SCRIPT" "$TARGET_DIR" "$DB_FILENAME" # Pass DB name as argument
 INDEXER_EXIT_CODE=$?
 
 # --- Deactivate Virtual Environment ---
