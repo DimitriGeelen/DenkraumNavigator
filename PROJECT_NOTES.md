@@ -2,6 +2,8 @@
 
 This file tracks key decisions, agreed-upon features, and next steps for the DenkraumNavigator project.
 
+*See also: `database_management.md` for details on indexing, backups, versioning, and cleanup.*
+
 ## Current Project Goals
 
 *Please refer to the `PROJECT_GOALS.md` file (also editable via the `/goals` webpage) for the list of active goals.*
@@ -11,8 +13,8 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 *   Repository Name: `DenkraumNavigator`
 *   Tracking Agreements: Using this `PROJECT_NOTES.md` file.
 *   Linting: Added `flake8` and `ruff`, fixed initial issues.
-*   Backup Strategy: Primarily automatic via `post-commit` hook. Hook creates DB/Code backups in `backups/` AND copies DB backup back to root `file_index.db`.
-*   Database Versioning: `file_index.db` (ignored by Git) is zipped into `file_index.zip` by `version_bumper.py` and committed along with version bump commits (minor/major). Deployment script extracts `file_index.db` from this zip.
+*   Backup Strategy: Details in `database_management.md`.
+*   Database Versioning: Details in `database_management.md`.
 
 ## Development Practices
 
@@ -154,11 +156,4 @@ This section lists key Python and Shell scripts used for application functionali
 **Shell Scripts (.sh):**
 
 *   `restart_server.sh`: Stops any running Gunicorn process for the app and restarts it in the background, binding to `0.0.0.0:5000`. Used for general development/testing.
-*   `restart_server_prod.sh`: Similar to `restart_server.sh` but attempts to bind Gunicorn specifically to the detected LAN IP address (e.g., `192.168.x.y:5000`). Intended for production use.
-*   `safe_version_bump.sh`: A wrapper script for `version_bumper.py`. Ensures the Git working directory is clean and unit tests pass (`pytest`) before allowing the version bump script to run.
-*   `deploy.sh`: (Purpose inferred from `COMMIT.md`) Likely handles deployment tasks, including potentially checking out code and extracting `file_index.db` from the committed `file_index.zip`.
-*   `.git/hooks/post-commit`: Git hook script that runs automatically after each commit. Creates database and code backups (`backups/commit_<hash>.*`) and copies the database backup back to the root (`file_index.db`).
-
-# Test commit for download link verification.
-# Test commit for download link verification.
-# Test commit for download link verification.
+*   `restart_server_prod.sh`: Similar to `restart_server.sh`
