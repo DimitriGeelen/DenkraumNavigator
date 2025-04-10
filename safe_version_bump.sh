@@ -38,6 +38,8 @@ echo "Success: Git working directory is clean."
 echo "[CHECK] Running unit tests (pytest)..."
 # Activate virtual environment
 source .venv/bin/activate
+# Add current directory to PYTHONPATH for pytest imports
+export PYTHONPATH="$PYTHONPATH:."
 
 if ! pytest; then
     echo "Error: Unit tests failed. Please fix tests before bumping version."
