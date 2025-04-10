@@ -1,4 +1,20 @@
 # Changelog
+## [5.1.0] - 2025-04-10
+
+### Changes
+
+- test: Create commit to verify download link on history page - integration (a59321b)
+- docs: Add learnings from version bump troubleshooting (2c3a308)
+- test: Create commit to verify download link on history page - integration (01d3aff)
+- fix: Set PYTHONPATH for pytest in version bump script (f7f4855)
+- fix: Activate venv in version bump script (36b4a4d)
+- chore: Untrack file_index.db (keep local file) (7f266be)
+- chore: Modify version bump script git check (b390dbb)
+- docs: Update project notes (8b352d7)
+- fix(indexer): Explicitly pass DB name to indexer.py via indexer.sh (e38154c)
+- feat: Add indexer.sh wrapper script (ecdae47)
+- fix(template): Correct keyword cloud link generation (12f230b)
+
 ## [5.0.0] - 2025-04-08
 
 ### Changes
