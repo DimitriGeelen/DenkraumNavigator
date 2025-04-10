@@ -162,3 +162,4 @@ This section lists key Python and Shell scripts used for application functionali
 *   `.git/hooks/post-commit`: Git hook script that runs automatically after each commit. Creates database and code backups (`backups/commit_<hash>.*`) and copies the database backup back to the root (`file_index.db`).
 *   `run_cleanup.sh`: Wrapper script to run `clean_up_database.py` within the virtual environment. Removes dead links from the database.
 *   `reindex.sh`: Wrapper script to run the full indexer (`indexer.py`) within the virtual environment.
+# Test commit for download link verification.
