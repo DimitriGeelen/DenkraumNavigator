@@ -32,7 +32,7 @@ This file tracks key decisions, agreed-upon features, and next steps for the Den
 
 ## Commit & Versioning
 
-*Please refer to the `COMMIT_VERSIONING_CHANGELOG.md` file for the detailed workflow for commits, version bumps, and changelog updates.*
+*Please refer to the `commit.md` file for the detailed workflow for commits, version bumps, and changelog updates.*
 
 ## Open Questions / Ideas
 
